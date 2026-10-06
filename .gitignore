@@ -1,0 +1,3 @@
+# Playlists contain provider credentials in every stream URL
+*.m3u
+*.m3u8

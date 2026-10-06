@@ -20,6 +20,18 @@ class Episode {
   final int season, episode;
 }
 
+class SeriesSummary {
+  const SeriesSummary(
+    this.group,
+    this.name,
+    this.poster,
+    this.seasons,
+    this.episodes,
+  );
+  final String group, name, poster;
+  final int seasons, episodes;
+}
+
 class Channel {
   const Channel({
     required this.type,
@@ -61,6 +73,10 @@ CREATE TABLE IF NOT EXISTS recents(
   type TEXT NOT NULL, id TEXT NOT NULL, watched_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
 ''';
+
+const _summaryCols =
+    's.grp, s.series_name, MAX(s.logo) AS poster, '
+    'COUNT(DISTINCT s.season) AS seasons, COUNT(*) AS episodes';
 
 const _cols = 's.type, s.id, s.name, s.grp, s.logo, s.url';
 
@@ -292,6 +308,103 @@ class Db {
       )
       .map((r) => Episode(_channel(r), r['season'] as int, r['episode'] as int))
       .toList();
+
+  List<SeriesSummary> _summaries(String sql, List<Object?> args) => _db
+      .select(sql, args)
+      .map(
+        (r) => SeriesSummary(
+          r['grp'] as String,
+          r['series_name'] as String,
+          r['poster'] as String,
+          r['seasons'] as int,
+          r['episodes'] as int,
+        ),
+      )
+      .toList();
+
+  List<SeriesSummary> seriesIn(String group) => _summaries(
+    "SELECT $_summaryCols FROM streams s WHERE s.type='series' AND s.grp=? "
+    "GROUP BY s.series_name ORDER BY s.series_name COLLATE NOCASE",
+    [group],
+  );
+
+  int seriesCount(String group) =>
+      _db.select(
+            "SELECT COUNT(DISTINCT series_name) AS n FROM streams "
+            "WHERE type='series' AND grp=?",
+            [group],
+          ).first['n']
+          as int;
+
+  List<SeriesSummary> seriesFavorites() => _summaries(
+    "SELECT $_summaryCols FROM series_favorites f JOIN streams s "
+    "ON s.type='series' AND s.grp=f.grp AND s.series_name=f.series_name "
+    "GROUP BY s.grp, s.series_name ORDER BY s.series_name COLLATE NOCASE",
+    const [],
+  );
+
+  bool isSeriesFavorite(String group, String name) => _db.select(
+    'SELECT 1 FROM series_favorites WHERE grp=? AND series_name=?',
+    [group, name],
+  ).isNotEmpty;
+
+  void setSeriesFavorite(String group, String name, bool value) {
+    if (value) {
+      _db.execute(
+        'INSERT OR IGNORE INTO series_favorites(grp,series_name) VALUES(?,?)',
+        [group, name],
+      );
+    } else {
+      _db.execute(
+        'DELETE FROM series_favorites WHERE grp=? AND series_name=?',
+        [group, name],
+      );
+    }
+  }
+
+  /// One entry per series with any episode progress, newest first, minus the
+  /// ones the user removed and has not watched since.
+  List<SeriesSummary> continueSeries({int limit = 20}) => _summaries(
+    "WITH w AS ("
+    " SELECT s.grp AS g, s.series_name AS n, MAX(p.updated_at) AS last"
+    " FROM progress p JOIN streams s ON s.type=p.type AND s.id=p.id"
+    " WHERE s.type='series' GROUP BY s.grp, s.series_name) "
+    "SELECT $_summaryCols FROM w JOIN streams s "
+    "ON s.type='series' AND s.grp=w.g AND s.series_name=w.n "
+    "WHERE NOT EXISTS (SELECT 1 FROM series_hidden h "
+    " WHERE h.grp=w.g AND h.series_name=w.n AND h.hidden_at >= w.last) "
+    "GROUP BY w.g, w.n ORDER BY w.last DESC LIMIT ?",
+    [limit],
+  );
+
+  void hideSeries(String group, String name, DateTime at) => _db.execute(
+    'INSERT INTO series_hidden(grp,series_name,hidden_at) VALUES(?,?,?) '
+    'ON CONFLICT(grp,series_name) DO UPDATE SET hidden_at=excluded.hidden_at',
+    [group, name, at.millisecondsSinceEpoch],
+  );
+
+  /// Marks an item as watched now without touching its resume position.
+  void touchProgress(String type, String id, DateTime at) => _db.execute(
+    'INSERT INTO progress(type,id,position_ms,duration_ms,updated_at) '
+    'VALUES(?,?,0,0,?) '
+    'ON CONFLICT(type,id) DO UPDATE SET updated_at=excluded.updated_at',
+    [type, id, at.millisecondsSinceEpoch],
+  );
+
+  (Channel, Progress)? lastWatched(String group, String name) {
+    final r = _db.select(
+      "SELECT $_cols, p.position_ms, p.duration_ms FROM progress p "
+      "JOIN streams s ON s.type=p.type AND s.id=p.id "
+      "WHERE s.type='series' AND s.grp=? AND s.series_name=? "
+      "ORDER BY p.updated_at DESC LIMIT 1",
+      [group, name],
+    );
+    if (r.isEmpty) return null;
+    return (
+      _channel(r.first),
+      Progress(r.first['position_ms'] as int, r.first['duration_ms'] as int),
+    );
+  }
 
   Channel _channel(Row r) => Channel(
     type: r['type'] as String,

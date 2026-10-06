@@ -49,34 +49,40 @@ Widget app(Db db, Widget home) => ProviderScope(
 );
 
 void main() {
-  testWidgets('rail switches to Filmes and lists category tiles without the prefix', (t) async {
-    final db = seeded();
-    await t.pumpWidget(app(db, const AppShell()));
-    await t.pumpAndSettle();
-    await t.tap(find.byTooltip('Filmes'));
-    await t.pumpAndSettle();
-    expect(find.text('Drama'), findsOneWidget);
-    expect(find.text('Acao'), findsOneWidget);
-    expect(find.text('2 filmes'), findsOneWidget);
-    expect(find.text('Filmes Adultos'), findsNothing);
-    db.close();
-  });
+  testWidgets(
+    'rail switches to Filmes and lists category tiles without the prefix',
+    (t) async {
+      final db = seeded();
+      await t.pumpWidget(app(db, const AppShell()));
+      await t.pumpAndSettle();
+      await t.tap(find.byTooltip('Filmes'));
+      await t.pumpAndSettle();
+      expect(find.text('Drama'), findsOneWidget);
+      expect(find.text('Acao'), findsOneWidget);
+      expect(find.text('2 filmes'), findsOneWidget);
+      expect(find.text('Filmes Adultos'), findsNothing);
+      db.close();
+    },
+  );
 
-  testWidgets('choosing a category opens a grid with parsed titles, years and tags', (t) async {
-    final db = seeded();
-    await t.pumpWidget(app(db, const AppShell()));
-    await t.pumpAndSettle();
-    await t.tap(find.byTooltip('Filmes'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Drama'));
-    await t.pumpAndSettle();
-    expect(find.text('Palmer'), findsOneWidget);
-    expect(find.text('2021'), findsOneWidget);
-    expect(find.text('Rocky'), findsOneWidget);
-    expect(find.text('4K'), findsOneWidget);
-    expect(find.text('Duro de Matar'), findsNothing);
-    db.close();
-  });
+  testWidgets(
+    'choosing a category opens a grid with parsed titles, years and tags',
+    (t) async {
+      final db = seeded();
+      await t.pumpWidget(app(db, const AppShell()));
+      await t.pumpAndSettle();
+      await t.tap(find.byTooltip('Filmes'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Drama'));
+      await t.pumpAndSettle();
+      expect(find.text('Palmer'), findsOneWidget);
+      expect(find.text('2021'), findsOneWidget);
+      expect(find.text('Rocky'), findsOneWidget);
+      expect(find.text('4K'), findsOneWidget);
+      expect(find.text('Duro de Matar'), findsNothing);
+      db.close();
+    },
+  );
 
   testWidgets('Filmes without any movie shows an empty state', (t) async {
     final db = Db.memory();

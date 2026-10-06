@@ -4,7 +4,8 @@ import 'package:glyph_player/data/database.dart';
 import 'package:glyph_player/data/stream_entry.dart';
 import 'package:glyph_player/state/providers.dart';
 
-StreamEntry e(String id, String name, String group, StreamType t) => StreamEntry(
+StreamEntry e(String id, String name, String group, StreamType t) =>
+    StreamEntry(
       type: t,
       id: id,
       name: name,
@@ -36,7 +37,9 @@ void main() {
   test('adult content is hidden by default in groups and search', () async {
     expect(c.read(showAdultProvider), isFalse);
     expect(await c.read(liveGroupsProvider.future), ['Globo']);
-    expect((await c.read(movieGroupsProvider.future)).map((g) => g.name), ['Filmes | Drama']);
+    expect((await c.read(movieGroupsProvider.future)).map((g) => g.name), [
+      'Filmes | Drama',
+    ]);
     final r = await c.read(searchProvider(('movie', 'palmer')).future);
     expect(r.map((x) => x.id), ['3']);
   });

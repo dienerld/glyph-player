@@ -1,0 +1,3 @@
+{
+  "extends": "@glyph-player/config/tsconfig.base.json"
+}

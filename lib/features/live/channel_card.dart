@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../player/player_page.dart';
 import '../../ui/theme.dart';
+import '../shared/cached_thumb.dart';
 import '../shared/monogram.dart';
 
 class ChannelCard extends StatefulWidget {
@@ -95,14 +96,11 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mono = Monogram(name: channel.name);
-    if (channel.logo.isEmpty) return mono;
-    return Image.network(
-      channel.logo,
+    return CachedThumb(
+      url: channel.logo,
       fit: BoxFit.contain,
       cacheWidth: 360,
-      errorBuilder: (_, _, _) => mono,
-      loadingBuilder: (_, child, p) => p == null ? child : mono,
+      fallback: Monogram(name: channel.name),
     );
   }
 }

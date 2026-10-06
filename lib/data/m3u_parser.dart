@@ -1,3 +1,4 @@
+import 'series_title.dart';
 import 'stream_entry.dart';
 
 final _attr = RegExp(r'\s*([\w-]+)="([^"]*)"');
@@ -54,6 +55,8 @@ StreamEntry? _entry(String inf, String url) {
     group = group.substring(_livePrefix.length);
   }
 
+  final series = type == StreamType.series ? parseSeriesName(name) : null;
+
   return StreamEntry(
     type: type,
     id: id,
@@ -61,5 +64,8 @@ StreamEntry? _entry(String inf, String url) {
     group: group,
     logo: attrs['tvg-logo'] ?? '',
     url: url,
+    seriesName: series?.name ?? '',
+    season: series?.season ?? 0,
+    episode: series?.episode ?? 0,
   );
 }

@@ -6,6 +6,7 @@ import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../live/search_delegate.dart';
 import '../settings/settings_page.dart';
+import '../shared/section_tile.dart';
 import 'movie_card.dart';
 import 'movie_grid_page.dart';
 
@@ -67,7 +68,16 @@ class MovieCategoriesPage extends ConsumerWidget {
                               mainAxisSpacing: Tokens.gap,
                             ),
                         itemCount: g.length,
-                        itemBuilder: (_, i) => _CategoryTile(group: g[i]),
+                        itemBuilder: (_, i) => SectionTile(
+                          label: categoryLabel(g[i].name),
+                          countText: '${g[i].count} filmes',
+                          tintKey: g[i].name,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => MovieGridPage(group: g[i].name),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -118,85 +128,6 @@ class _ContinueRow extends StatelessWidget {
       ),
     ],
   );
-}
-
-class _CategoryTile extends StatefulWidget {
-  const _CategoryTile({required this.group});
-  final GroupCount group;
-
-  @override
-  State<_CategoryTile> createState() => _CategoryTileState();
-}
-
-class _CategoryTileState extends State<_CategoryTile> {
-  bool _active = false;
-
-  /// Stable hue per category so the grid is scannable without artwork.
-  Color get _tint {
-    final hue = widget.group.name.codeUnits.fold<int>(7, (h, c) => h * 31 + c);
-    return HSLColor.fromAHSL(
-      1,
-      (hue.abs() % 360).toDouble(),
-      0.32,
-      0.2,
-    ).toColor();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final g = widget.group;
-    void open() => Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => MovieGridPage(group: g.name)));
-    return FocusableActionDetector(
-      onShowFocusHighlight: (v) => setState(() => _active = v),
-      onShowHoverHighlight: (v) => setState(() => _active = v),
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) {
-            open();
-            return null;
-          },
-        ),
-      },
-      child: GestureDetector(
-        onTap: open,
-        child: AnimatedContainer(
-          duration: Tokens.hover,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _tint,
-            borderRadius: BorderRadius.circular(Tokens.radius),
-            border: Border.all(
-              color: _active ? Tokens.tally : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                categoryLabel(g.name),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: Tokens.display,
-                  fontSize: 20,
-                  height: 24 / 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                '${g.count} filmes',
-                style: const TextStyle(color: Tokens.textDim, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _EmptyMovies extends StatelessWidget {

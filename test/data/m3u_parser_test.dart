@@ -59,4 +59,15 @@ void main() {
     ]);
     expect(r.single.name, 'Real Name');
   });
+
+  test('series entries carry series name, season and episode', () async {
+    final r = await parse([
+      '#EXTINF:-1 tvg-id="" tvg-name="Dark S02E03" tvg-logo="" group-title="Series | Netflix",Dark S02E03',
+      'http://h/series/U/P/5.mp4',
+      '#EXTINF:-1 tvg-id="" tvg-name="Globo SP" tvg-logo="" group-title="Globo",Globo SP',
+      'http://h/live/U/P/6.ts',
+    ]);
+    expect((r[0].seriesName, r[0].season, r[0].episode), ('Dark', 2, 3));
+    expect((r[1].seriesName, r[1].season, r[1].episode), ('', 0, 0));
+  });
 }

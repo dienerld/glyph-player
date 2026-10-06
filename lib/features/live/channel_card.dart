@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../player/player_page.dart';
 import '../../ui/theme.dart';
+import '../shared/monogram.dart';
 
 class ChannelCard extends StatefulWidget {
   const ChannelCard({
@@ -94,7 +95,7 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mono = _Monogram(name: channel.name);
+    final mono = Monogram(name: channel.name);
     if (channel.logo.isEmpty) return mono;
     return Image.network(
       channel.logo,
@@ -102,29 +103,6 @@ class _Logo extends StatelessWidget {
       cacheWidth: 360,
       errorBuilder: (_, _, _) => mono,
       loadingBuilder: (_, child, p) => p == null ? child : mono,
-    );
-  }
-}
-
-class _Monogram extends StatelessWidget {
-  const _Monogram({required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
-    final letters = words
-        .take(2)
-        .map((w) => w.characters.first.toUpperCase())
-        .join();
-    return Text(
-      letters,
-      style: const TextStyle(
-        fontFamily: Tokens.display,
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: Tokens.textDim,
-      ),
     );
   }
 }

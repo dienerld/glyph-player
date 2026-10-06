@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../ui/theme.dart';
 import '../live/live_home_page.dart';
 import '../movies/movie_categories_page.dart';
+import '../series/series_home_page.dart';
 import '../settings/settings_page.dart';
 
-enum _Tab { live, movies }
+enum _Tab { live, movies, series }
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -26,6 +27,7 @@ class _AppShellState extends State<AppShell> {
           child: switch (_tab) {
             _Tab.live => const LiveHomePage(),
             _Tab.movies => const MovieCategoriesPage(),
+            _Tab.series => const SeriesHomePage(),
           },
         ),
       ],
@@ -58,6 +60,12 @@ class _Rail extends StatelessWidget {
           label: 'Filmes',
           active: tab == _Tab.movies,
           onTap: () => onSelect(_Tab.movies),
+        ),
+        _RailItem(
+          icon: Icons.tv_outlined,
+          label: 'Séries',
+          active: tab == _Tab.series,
+          onTap: () => onSelect(_Tab.series),
         ),
         const Spacer(),
         _RailItem(

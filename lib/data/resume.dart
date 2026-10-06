@@ -12,3 +12,12 @@ Duration? resumePosition(int positionMs, int durationMs) {
   }
   return Duration(milliseconds: positionMs);
 }
+
+const _endWindowMs = 30000;
+
+/// True only when playback really reached the end of the item. mpv also raises
+/// its end-of-file flag when a stream is cut, which must not count as "watched".
+bool reachedEnd(int positionMs, int durationMs) =>
+    durationMs > 0 &&
+    (isFinished(positionMs, durationMs) ||
+        durationMs - positionMs <= _endWindowMs);

@@ -82,6 +82,9 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
 
   void _onCompleted() {
     final dur = _player.state.duration;
+    final pos = _player.state.position;
+    // A cut connection also raises "completed"; only the real end counts.
+    if (!reachedEnd(pos.inMilliseconds, dur.inMilliseconds)) return;
     if (dur > Duration.zero) {
       _db.saveProgress(
         _item.type,

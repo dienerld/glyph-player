@@ -23,4 +23,14 @@ void main() {
     expect(isFinished(950, 1000), isFalse);
     expect(isFinished(960, 0), isFalse);
   });
+
+  test(
+    'reachedEnd is true near the real end, false for a dropped connection',
+    () {
+      expect(reachedEnd(2700000, 2700000), isTrue); // played to the end
+      expect(reachedEnd(2690000, 2700000), isTrue); // within the last 30 s
+      expect(reachedEnd(1200000, 2700000), isFalse); // cut at minute 20 of 45
+      expect(reachedEnd(0, 0), isFalse); // unknown duration
+    },
+  );
 }

@@ -3,3 +3,10 @@
 *.m3u8
 
 .superpowers/
+
+# Flutter
+.dart_tool/
+build/
+.idea/
+*.iml
+.flutter-plugins-dependencies

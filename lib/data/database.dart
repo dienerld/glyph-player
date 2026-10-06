@@ -2,6 +2,17 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'stream_entry.dart';
 
+class GroupCount {
+  const GroupCount(this.name, this.count);
+  final String name;
+  final int count;
+}
+
+class Progress {
+  const Progress(this.positionMs, this.durationMs);
+  final int positionMs, durationMs;
+}
+
 class Channel {
   const Channel({
     required this.type,
@@ -26,6 +37,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS streams_fts USING fts5(
   tokenize='unicode61 remove_diacritics 2');
 CREATE TABLE IF NOT EXISTS favorites(
   type TEXT NOT NULL, id TEXT NOT NULL, PRIMARY KEY(type, id));
+CREATE TABLE IF NOT EXISTS settings(
+  key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS progress(
+  type TEXT NOT NULL, id TEXT NOT NULL, position_ms INTEGER NOT NULL,
+  duration_ms INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+  PRIMARY KEY(type, id));
 CREATE TABLE IF NOT EXISTS recents(
   type TEXT NOT NULL, id TEXT NOT NULL, watched_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
@@ -84,19 +101,20 @@ class Db {
     _db.execute("INSERT INTO streams_fts(streams_fts) VALUES('rebuild')");
   }
 
-  List<String> liveGroups() => _db
+  List<GroupCount> groups(String type) => _db
       .select(
-        "SELECT grp FROM streams WHERE type='live' GROUP BY grp ORDER BY MIN(rowid)",
+        'SELECT grp, COUNT(*) AS n FROM streams WHERE type=? GROUP BY grp ORDER BY MIN(rowid)',
+        [type],
       )
-      .map((r) => r['grp'] as String)
+      .map((r) => GroupCount(r['grp'] as String, r['n'] as int))
       .toList();
 
-  List<Channel> liveChannels(String group) => _channels(
-    "SELECT $_cols FROM streams s WHERE s.type='live' AND s.grp=? ORDER BY s.rowid",
-    [group],
+  List<Channel> channels(String type, String group) => _channels(
+    "SELECT $_cols FROM streams s WHERE s.type=? AND s.grp=? ORDER BY s.rowid",
+    [type, group],
   );
 
-  List<Channel> searchLive(String text, {int limit = 60}) {
+  List<Channel> search(String type, String text, {int limit = 60}) {
     final tokens = text
         .split(RegExp(r'\s+'))
         .where((t) => t.isNotEmpty)
@@ -105,8 +123,8 @@ class Db {
     if (tokens.isEmpty) return const [];
     return _channels(
       "SELECT $_cols FROM streams_fts f JOIN streams s ON s.rowid = f.rowid "
-      "WHERE streams_fts MATCH ? AND s.type='live' ORDER BY f.rank LIMIT ?",
-      [tokens, limit],
+      "WHERE streams_fts MATCH ? AND s.type=? ORDER BY f.rank LIMIT ?",
+      [tokens, type, limit],
     );
   }
 
@@ -142,6 +160,51 @@ class Db {
     'INSERT INTO recents(type,id,watched_at) VALUES(?,?,?) '
     'ON CONFLICT(type,id) DO UPDATE SET watched_at=excluded.watched_at',
     [type, id, at.millisecondsSinceEpoch],
+  );
+
+  String? setting(String key) {
+    final r = _db.select('SELECT value FROM settings WHERE key=?', [key]);
+    return r.isEmpty ? null : r.first['value'] as String;
+  }
+
+  void setSetting(String key, String value) => _db.execute(
+    'INSERT INTO settings(key,value) VALUES(?,?) '
+    'ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+    [key, value],
+  );
+
+  void saveProgress(
+    String type,
+    String id,
+    int positionMs,
+    int durationMs,
+    DateTime at,
+  ) => _db.execute(
+    'INSERT INTO progress(type,id,position_ms,duration_ms,updated_at) VALUES(?,?,?,?,?) '
+    'ON CONFLICT(type,id) DO UPDATE SET position_ms=excluded.position_ms, '
+    'duration_ms=excluded.duration_ms, updated_at=excluded.updated_at',
+    [type, id, positionMs, durationMs, at.millisecondsSinceEpoch],
+  );
+
+  Progress? progressOf(String type, String id) {
+    final r = _db.select(
+      'SELECT position_ms, duration_ms FROM progress WHERE type=? AND id=?',
+      [type, id],
+    );
+    if (r.isEmpty) return null;
+    return Progress(
+      r.first['position_ms'] as int,
+      r.first['duration_ms'] as int,
+    );
+  }
+
+  /// Started (past 30 s) and not finished (under 95%), most recent first.
+  List<Channel> continueWatching({int limit = 20}) => _channels(
+    "SELECT $_cols FROM progress p JOIN streams s ON s.type=p.type AND s.id=p.id "
+    "WHERE s.type='movie' AND p.position_ms >= 30000 "
+    "AND (p.duration_ms <= 0 OR p.position_ms * 1.0 / p.duration_ms <= 0.95) "
+    "ORDER BY p.updated_at DESC LIMIT ?",
+    [limit],
   );
 
   List<Channel> _channels(String sql, List<Object?> args) => _db

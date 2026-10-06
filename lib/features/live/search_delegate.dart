@@ -5,7 +5,9 @@ import '../../ui/theme.dart';
 import 'channel_card.dart';
 
 class ChannelSearchDelegate extends SearchDelegate<void> {
-  ChannelSearchDelegate() : super(searchFieldLabel: 'Buscar canal');
+  ChannelSearchDelegate({this.type = 'live'})
+    : super(searchFieldLabel: type == 'live' ? 'Buscar canal' : 'Buscar filme');
+  final String type;
 
   @override
   ThemeData appBarTheme(BuildContext context) => Theme.of(context).copyWith(
@@ -36,7 +38,7 @@ class ChannelSearchDelegate extends SearchDelegate<void> {
 
   Widget _results() => Consumer(
     builder: (context, ref, _) {
-      final r = ref.watch(searchProvider(query));
+      final r = ref.watch(searchProvider((type, query)));
       return r.when(
         loading: () => const SizedBox.shrink(),
         error: (e, _) => Center(child: Text('Erro: $e')),

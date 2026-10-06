@@ -22,7 +22,9 @@ class _Store implements PlaylistUrlStore {
   }
 }
 
-Future<(ProviderContainer, Future<void> Function())> setup(PlaylistUrlStore store) async {
+Future<(ProviderContainer, Future<void> Function())> setup(
+  PlaylistUrlStore store,
+) async {
   final tmp = await Directory.systemTemp.createTemp('ctlf');
   final paths = AppPaths(
     dbPath: '${tmp.path}/g.db',

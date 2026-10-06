@@ -17,25 +17,30 @@ StreamEntry ep(String id, String group, String series) => StreamEntry(
 );
 
 void main() {
-  test('adult series sections are hidden by default and shown on opt-in', () async {
-    final db = Db.memory();
-    final run = db.beginRun();
-    db.upsertBatch([
-      ep('1', 'Series | Netflix', 'Dark'),
-      ep('2', 'Hentai [adultos]', 'X'),
-    ], run);
-    db.finishRun(run);
-    final c = ProviderContainer(overrides: [dbProvider.overrideWithValue(db)]);
-    addTearDown(() {
-      c.dispose();
-      db.close();
-    });
-    expect((await c.read(seriesSectionsProvider.future)).map((g) => g.name), [
-      'Series | Netflix',
-    ]);
-    c.read(showAdultProvider.notifier).set(true);
-    expect((await c.read(seriesSectionsProvider.future)).length, 2);
-  });
+  test(
+    'adult series sections are hidden by default and shown on opt-in',
+    () async {
+      final db = Db.memory();
+      final run = db.beginRun();
+      db.upsertBatch([
+        ep('1', 'Series | Netflix', 'Dark'),
+        ep('2', 'Hentai [adultos]', 'X'),
+      ], run);
+      db.finishRun(run);
+      final c = ProviderContainer(
+        overrides: [dbProvider.overrideWithValue(db)],
+      );
+      addTearDown(() {
+        c.dispose();
+        db.close();
+      });
+      expect((await c.read(seriesSectionsProvider.future)).map((g) => g.name), [
+        'Series | Netflix',
+      ]);
+      c.read(showAdultProvider.notifier).set(true);
+      expect((await c.read(seriesSectionsProvider.future)).length, 2);
+    },
+  );
 
   test('continue and favorites providers read the db', () async {
     final db = Db.memory();

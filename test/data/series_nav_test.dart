@@ -16,7 +16,12 @@ Episode e(String id, int s, int n) => Episode(
 );
 
 void main() {
-  final eps = [e('1', 1, 1), e('2', 1, 2), e('3', 1, 2), e('4', 2, 1)]; // '3' duplicates '2'
+  final eps = [
+    e('1', 1, 1),
+    e('2', 1, 2),
+    e('3', 1, 2),
+    e('4', 2, 1),
+  ]; // '3' duplicates '2'
 
   test('next skips a duplicate of the current episode', () {
     expect(nextIndex(eps, 1), 3);

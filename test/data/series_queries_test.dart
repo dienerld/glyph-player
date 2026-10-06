@@ -38,14 +38,17 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('seriesIn summarises name, poster, seasons and episodes, sorted by name', () {
-    final list = db.seriesIn('Series | Netflix');
-    expect(list.map((s) => s.name), ['Alias', 'Dark']);
-    final dark = list[1];
-    expect(dark.poster, 'http://p/dark.jpg');
-    expect(dark.seasons, 2);
-    expect(dark.episodes, 4);
-  });
+  test(
+    'seriesIn summarises name, poster, seasons and episodes, sorted by name',
+    () {
+      final list = db.seriesIn('Series | Netflix');
+      expect(list.map((s) => s.name), ['Alias', 'Dark']);
+      final dark = list[1];
+      expect(dark.poster, 'http://p/dark.jpg');
+      expect(dark.seasons, 2);
+      expect(dark.episodes, 4);
+    },
+  );
 
   test('episodes keep duplicates, ordered by season then episode', () {
     final e = db.episodes('Series | Netflix', 'Dark');

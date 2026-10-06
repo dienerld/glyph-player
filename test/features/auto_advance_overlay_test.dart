@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph_player/features/series/auto_advance_overlay.dart';
 
-Widget host(AutoAdvanceOverlay o) =>
-    MaterialApp(home: Scaffold(body: Stack(children: [o])));
+Widget host(AutoAdvanceOverlay o) => MaterialApp(
+  home: Scaffold(body: Stack(children: [o])),
+);
 
 void main() {
   testWidgets('counts down and advances once at zero', (t) async {

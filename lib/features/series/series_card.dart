@@ -12,9 +12,12 @@ const seriesCardHeight = 290.0;
 
 String seasonsLabel(int n) => n == 1 ? '1 temporada' : '$n temporadas';
 
-/// `Series | Netflix` -> `Netflix`; collections keep their own name.
-String distributorLabel(String group) =>
-    group.replaceFirst(RegExp(r'^Series\s*\|\s*'), '');
+/// `Series | Netflix` -> `Netflix`; collections keep their own name and a
+/// group with no name is labelled instead of rendering blank.
+String distributorLabel(String group) {
+  final label = group.replaceFirst(RegExp(r'^Series\s*\|\s*'), '').trim();
+  return label.isEmpty ? 'Sem categoria' : label;
+}
 
 /// Poster card. When [removable], an "x" removes the series from Continue.
 class SeriesCard extends ConsumerStatefulWidget {

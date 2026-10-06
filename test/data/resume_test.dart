@@ -33,4 +33,12 @@ void main() {
       expect(reachedEnd(0, 0), isFalse); // unknown duration
     },
   );
+
+  test('nearEnd opens the "next episode" window in the last minute', () {
+    expect(nearEnd(2640000, 2700000), isTrue); // exactly 60 s left
+    expect(nearEnd(2699000, 2700000), isTrue);
+    expect(nearEnd(2600000, 2700000), isFalse); // 100 s left
+    expect(nearEnd(0, 0), isFalse); // unknown duration
+    expect(nearEnd(30000, 45000), isTrue); // very short item
+  });
 }

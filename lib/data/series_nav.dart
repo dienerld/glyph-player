@@ -17,3 +17,13 @@ int continueIndex(List<Episode> eps, int lastIndex, Progress progress) =>
     isFinished(progress.positionMs, progress.durationMs)
     ? (nextIndex(eps, lastIndex) ?? lastIndex)
     : lastIndex;
+
+/// Closest earlier index whose (season, episode) differs from the current one.
+/// Null on the first episode.
+int? previousIndex(List<Episode> eps, int current) {
+  final cur = eps[current];
+  for (var i = current - 1; i >= 0; i--) {
+    if (eps[i].season != cur.season || eps[i].episode != cur.episode) return i;
+  }
+  return null;
+}

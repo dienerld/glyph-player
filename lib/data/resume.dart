@@ -21,3 +21,9 @@ bool reachedEnd(int positionMs, int durationMs) =>
     durationMs > 0 &&
     (isFinished(positionMs, durationMs) ||
         durationMs - positionMs <= _endWindowMs);
+
+const _nextWindowMs = 60000;
+
+/// Last minute of an item: when the "next episode" banner is offered.
+bool nearEnd(int positionMs, int durationMs) =>
+    durationMs > 0 && durationMs - positionMs <= _nextWindowMs;

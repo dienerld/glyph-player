@@ -46,4 +46,14 @@ void main() {
   test('continue on a finished last episode reopens it', () {
     expect(continueIndex(eps, 3, const Progress(590000, 600000)), 3);
   });
+
+  test('previous skips a duplicate and goes back across seasons', () {
+    expect(previousIndex(eps, 3), 2); // from S2E1 back to the last S1E2 row
+    expect(previousIndex(eps, 2), 0); // from the duplicate S1E2 to S1E1
+    expect(previousIndex(eps, 1), 0);
+  });
+
+  test('previous is null on the first episode', () {
+    expect(previousIndex(eps, 0), isNull);
+  });
 }

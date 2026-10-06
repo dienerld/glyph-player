@@ -12,6 +12,7 @@ import '../../data/resume.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../series/auto_advance_overlay.dart';
+import '../series/next_episode_banner.dart';
 
 const _seekStep = Duration(seconds: 10);
 const _saveEvery = Duration(seconds: 10);
@@ -24,10 +25,12 @@ class VodPlayerPage extends ConsumerStatefulWidget {
     required this.queue,
     required this.index,
     this.nextOf,
+    this.previousOf,
   });
   final List<Channel> queue;
   final int index;
   final int? Function(int index)? nextOf;
+  final int? Function(int index)? previousOf;
 
   @override
   ConsumerState<VodPlayerPage> createState() => _VodPlayerPageState();
@@ -38,7 +41,11 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   late final VideoController _video = VideoController(_player);
   late final Db _db = ref.read(dbProvider);
   late int _index = widget.index;
+  late final ValueNotifier<int> _cursor = ValueNotifier(widget.index);
   int? _upNext;
+  bool _showBanner = false;
+  bool _bannerDismissed = false;
+  StreamSubscription<Duration>? _positionSub;
 
   /// Set when the current item ended, so a later save cannot overwrite the
   /// "finished" progress with the position the player resets to.
@@ -54,6 +61,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     _completedSub = _player.stream.completed.listen((done) {
       if (done) _onCompleted();
     });
+    _positionSub = _player.stream.position.listen(_onPosition);
     _openCurrent();
     _saver = Timer.periodic(_saveEvery, (_) => _save());
   }
@@ -61,6 +69,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   Future<void> _openCurrent() async {
     final item = _item;
     _finished = false;
+    _bannerDismissed = false;
     final saved = _db.progressOf(item.type, item.id);
     if (item.type == 'series') {
       _db.touchProgress(item.type, item.id, DateTime.now());
@@ -85,6 +94,14 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     final pos = _player.state.position;
     // A cut connection also raises "completed"; only the real end counts.
     if (!reachedEnd(pos.inMilliseconds, dur.inMilliseconds)) return;
+    _markFinished();
+    final next = widget.nextOf?.call(_index);
+    if (next != null && mounted) setState(() => _upNext = next);
+  }
+
+  /// Records the current item as fully watched and stops further saves.
+  void _markFinished() {
+    final dur = _player.state.duration;
     if (dur > Duration.zero) {
       _db.saveProgress(
         _item.type,
@@ -95,18 +112,36 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
       );
     }
     _finished = true;
+  }
+
+  /// Offers "next episode" during the last minute (once per item).
+  void _onPosition(Duration pos) {
     final next = widget.nextOf?.call(_index);
-    if (next != null && mounted) setState(() => _upNext = next);
+    final show =
+        next != null &&
+        _upNext == null &&
+        !_bannerDismissed &&
+        !_finished &&
+        nearEnd(pos.inMilliseconds, _player.state.duration.inMilliseconds);
+    if (show != _showBanner && mounted) setState(() => _showBanner = show);
+  }
+
+  /// Switches to another item of the queue, keeping the progress of the one
+  /// being left.
+  void _goTo(int index) {
+    _save();
+    setState(() {
+      _index = index;
+      _upNext = null;
+      _showBanner = false;
+    });
+    _cursor.value = index;
+    _openCurrent();
   }
 
   void _advance() {
     final next = _upNext;
-    if (next == null) return;
-    setState(() {
-      _index = next;
-      _upNext = null;
-    });
-    _openCurrent();
+    if (next != null) _goTo(next);
   }
 
   void _save() {
@@ -132,6 +167,8 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   void dispose() {
     _saver?.cancel();
     _completedSub?.cancel();
+    _positionSub?.cancel();
+    _cursor.dispose();
     _save();
     _player.dispose();
     super.dispose();
@@ -145,6 +182,33 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
         onPressed: () => _seekBy(d),
       ),
     );
+    // The controls theme is not rebuilt when state changes, so anything that
+    // depends on the current item listens to [_cursor] itself.
+    Widget episodeButton(
+      String tip,
+      IconData icon,
+      int? Function(int index)? of,
+    ) => ValueListenableBuilder<int>(
+      valueListenable: _cursor,
+      builder: (_, i, _) {
+        final target = of?.call(i);
+        return Tooltip(
+          message: tip,
+          child: MaterialDesktopCustomButton(
+            icon: Icon(
+              icon,
+              color: target == null
+                  ? Tokens.textDim.withValues(alpha: 0.4)
+                  : null,
+            ),
+            onPressed: () {
+              if (target != null) _goTo(target);
+            },
+          ),
+        );
+      },
+    );
+    final hasEpisodes = widget.nextOf != null || widget.previousOf != null;
     return MaterialDesktopVideoControlsThemeData(
       automaticallyImplySkipNextButton: false,
       automaticallyImplySkipPreviousButton: false,
@@ -163,6 +227,16 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
             _player.setVolume(_player.state.volume == 0 ? 100 : 0),
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
+        if (hasEpisodes) ...{
+          const SingleActivator(LogicalKeyboardKey.keyN): () {
+            final t = widget.nextOf?.call(_cursor.value);
+            if (t != null) _goTo(t);
+          },
+          const SingleActivator(LogicalKeyboardKey.keyP): () {
+            final t = widget.previousOf?.call(_cursor.value);
+            if (t != null) _goTo(t);
+          },
+        },
       },
       topButtonBar: [
         Tooltip(
@@ -174,18 +248,29 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
         ),
         const SizedBox(width: 8),
         Flexible(
-          child: Text(
-            parseMovieTitle(_item.name).title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          child: ValueListenableBuilder<int>(
+            valueListenable: _cursor,
+            builder: (_, i, _) => Text(
+              parseMovieTitle(widget.queue[i].name).title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ],
       bottomButtonBar: [
+        if (hasEpisodes)
+          episodeButton(
+            'Episódio anterior (P)',
+            Icons.skip_previous,
+            widget.previousOf,
+          ),
         step('Voltar 10 s (←)', Icons.replay_10, -_seekStep),
         const MaterialDesktopPlayOrPauseButton(),
         step('Avançar 10 s (→)', Icons.forward_10, _seekStep),
+        if (hasEpisodes)
+          episodeButton('Próximo episódio (N)', Icons.skip_next, widget.nextOf),
         const MaterialDesktopVolumeButton(),
         const MaterialDesktopPositionIndicator(),
         const Spacer(),
@@ -219,6 +304,18 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
                 ),
               ),
             ),
+            if (_showBanner && _upNext == null)
+              NextEpisodeBanner(
+                title: widget.queue[widget.nextOf!(_index)!].name,
+                onSkip: () {
+                  _markFinished(); // skipping from the banner means "seen"
+                  _goTo(widget.nextOf!(_index)!);
+                },
+                onDismiss: () => setState(() {
+                  _showBanner = false;
+                  _bannerDismissed = true;
+                }),
+              ),
             if (_upNext != null)
               AutoAdvanceOverlay(
                 key: ValueKey(_upNext),

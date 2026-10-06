@@ -29,6 +29,7 @@ class _SeriesPageState extends ConsumerState<SeriesPage> {
           queue: [for (final e in eps) e.item],
           index: index,
           nextOf: (k) => nextIndex(eps, k),
+          previousOf: (k) => previousIndex(eps, k),
         ),
       ),
     );

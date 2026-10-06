@@ -68,6 +68,42 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     super.dispose();
   }
 
+  /// Live-TV controls: previous/next channel of the group, play/pause, volume,
+  /// fullscreen. Shortcuts are replaced so up/down keep meaning "zap" (the
+  /// defaults seek and change volume) and also work inside fullscreen.
+  MaterialDesktopVideoControlsThemeData _controls() {
+    Widget zapButton(String tip, IconData icon, int delta) => Tooltip(
+      message: tip,
+      child: MaterialDesktopCustomButton(
+        icon: Icon(icon),
+        onPressed: () => _zap(delta),
+      ),
+    );
+    return MaterialDesktopVideoControlsThemeData(
+      displaySeekBar: false,
+      automaticallyImplySkipNextButton: false,
+      automaticallyImplySkipPreviousButton: false,
+      buttonBarButtonColor: Tokens.text,
+      keyboardShortcuts: {
+        const SingleActivator(LogicalKeyboardKey.space): _player.playOrPause,
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () => _zap(-1),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () => _zap(1),
+        const SingleActivator(LogicalKeyboardKey.keyM): () =>
+            _player.setVolume(_player.state.volume == 0 ? 100 : 0),
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).pop(),
+      },
+      bottomButtonBar: [
+        zapButton('Canal anterior (↑)', Icons.skip_previous, -1),
+        const MaterialDesktopPlayOrPauseButton(),
+        zapButton('Próximo canal (↓)', Icons.skip_next, 1),
+        const MaterialDesktopVolumeButton(),
+        const Spacer(),
+        const MaterialDesktopFullscreenButton(),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final db = ref.watch(dbProvider);
@@ -93,7 +129,14 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: Video(controller: _video, controls: NoVideoControls),
+                  child: MaterialDesktopVideoControlsTheme(
+                    normal: _controls(),
+                    fullscreen: _controls(),
+                    child: Video(
+                      controller: _video,
+                      controls: MaterialDesktopVideoControls,
+                    ),
+                  ),
                 ),
                 Positioned(
                   top: 8,

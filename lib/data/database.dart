@@ -35,7 +35,9 @@ const _cols = 's.type, s.id, s.name, s.grp, s.logo, s.url';
 
 class Db {
   Db._(this._db) {
-    _db.execute('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=NORMAL;');
+    _db.execute(
+      'PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=NORMAL;',
+    );
     _db.execute(_schema);
   }
 
@@ -44,10 +46,13 @@ class Db {
 
   final Database _db;
 
-  void close() => _db.dispose();
+  void close() => _db.close();
 
   int beginRun() =>
-      (_db.select('SELECT COALESCE(MAX(run), 0) + 1 AS r FROM streams').first['r'] as int);
+      (_db
+              .select('SELECT COALESCE(MAX(run), 0) + 1 AS r FROM streams')
+              .first['r']
+          as int);
 
   void upsertBatch(List<StreamEntry> entries, int run) {
     final stmt = _db.prepare(
@@ -65,7 +70,7 @@ class Db {
       _db.execute('ROLLBACK');
       rethrow;
     } finally {
-      stmt.dispose();
+      stmt.close();
     }
   }
 
@@ -77,14 +82,16 @@ class Db {
   }
 
   List<String> liveGroups() => _db
-      .select("SELECT grp FROM streams WHERE type='live' GROUP BY grp ORDER BY MIN(rowid)")
+      .select(
+        "SELECT grp FROM streams WHERE type='live' GROUP BY grp ORDER BY MIN(rowid)",
+      )
       .map((r) => r['grp'] as String)
       .toList();
 
   List<Channel> liveChannels(String group) => _channels(
-        "SELECT $_cols FROM streams s WHERE s.type='live' AND s.grp=? ORDER BY s.rowid",
-        [group],
-      );
+    "SELECT $_cols FROM streams s WHERE s.type='live' AND s.grp=? ORDER BY s.rowid",
+    [group],
+  );
 
   List<Channel> searchLive(String text, {int limit = 60}) {
     final tokens = text
@@ -101,44 +108,50 @@ class Db {
   }
 
   List<Channel> favorites() => _channels(
-        "SELECT $_cols FROM favorites f JOIN streams s ON s.type=f.type AND s.id=f.id "
-        "WHERE s.type='live' ORDER BY s.name",
-        const [],
-      );
+    "SELECT $_cols FROM favorites f JOIN streams s ON s.type=f.type AND s.id=f.id "
+    "WHERE s.type='live' ORDER BY s.name",
+    const [],
+  );
 
   List<Channel> recents({int limit = 20}) => _channels(
-        "SELECT $_cols FROM recents r JOIN streams s ON s.type=r.type AND s.id=r.id "
-        "WHERE s.type='live' ORDER BY r.watched_at DESC LIMIT ?",
-        [limit],
-      );
+    "SELECT $_cols FROM recents r JOIN streams s ON s.type=r.type AND s.id=r.id "
+    "WHERE s.type='live' ORDER BY r.watched_at DESC LIMIT ?",
+    [limit],
+  );
 
-  bool isFavorite(String type, String id) => _db
-      .select('SELECT 1 FROM favorites WHERE type=? AND id=?', [type, id])
-      .isNotEmpty;
+  bool isFavorite(String type, String id) => _db.select(
+    'SELECT 1 FROM favorites WHERE type=? AND id=?',
+    [type, id],
+  ).isNotEmpty;
 
   void setFavorite(String type, String id, bool value) {
     if (value) {
-      _db.execute('INSERT OR IGNORE INTO favorites(type,id) VALUES(?,?)', [type, id]);
+      _db.execute('INSERT OR IGNORE INTO favorites(type,id) VALUES(?,?)', [
+        type,
+        id,
+      ]);
     } else {
       _db.execute('DELETE FROM favorites WHERE type=? AND id=?', [type, id]);
     }
   }
 
   void markWatched(String type, String id, DateTime at) => _db.execute(
-        'INSERT INTO recents(type,id,watched_at) VALUES(?,?,?) '
-        'ON CONFLICT(type,id) DO UPDATE SET watched_at=excluded.watched_at',
-        [type, id, at.millisecondsSinceEpoch],
-      );
+    'INSERT INTO recents(type,id,watched_at) VALUES(?,?,?) '
+    'ON CONFLICT(type,id) DO UPDATE SET watched_at=excluded.watched_at',
+    [type, id, at.millisecondsSinceEpoch],
+  );
 
   List<Channel> _channels(String sql, List<Object?> args) => _db
       .select(sql, args)
-      .map((r) => Channel(
-            type: r['type'] as String,
-            id: r['id'] as String,
-            name: r['name'] as String,
-            group: r['grp'] as String,
-            logo: r['logo'] as String,
-            url: r['url'] as String,
-          ))
+      .map(
+        (r) => Channel(
+          type: r['type'] as String,
+          id: r['id'] as String,
+          name: r['name'] as String,
+          group: r['grp'] as String,
+          logo: r['logo'] as String,
+          url: r['url'] as String,
+        ),
+      )
       .toList();
 }

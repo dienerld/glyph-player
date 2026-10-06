@@ -1,39 +1,27 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
-void main() {
+import 'app.dart';
+import 'data/database.dart';
+import 'state/providers.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-  runApp(const _Spike());
-}
-
-class _Spike extends StatefulWidget {
-  const _Spike();
-  @override
-  State<_Spike> createState() => _SpikeState();
-}
-
-class _SpikeState extends State<_Spike> {
-  final player = Player();
-  late final controller = VideoController(player);
-
-  @override
-  void initState() {
-    super.initState();
-    player.stream.videoParams.listen((p) => stdout.writeln('SPIKE videoParams: ${p.w}x${p.h}'));
-    player.stream.error.listen((e) => stdout.writeln('SPIKE error: $e'));
-    player.open(Media(Platform.environment['GLYPH_TEST_URL']!));
-  }
-
-  @override
-  void dispose() {
-    player.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      MaterialApp(home: Scaffold(body: Video(controller: controller)));
+  final dir = await getApplicationSupportDirectory();
+  await dir.create(recursive: true);
+  final paths = AppPaths(
+    dbPath: p.join(dir.path, 'glyph.db'),
+    downloadPath: p.join(dir.path, 'playlist.download'),
+  );
+  runApp(ProviderScope(
+    overrides: [
+      appPathsProvider.overrideWithValue(paths),
+      dbProvider.overrideWithValue(Db.open(paths.dbPath)),
+    ],
+    child: const GlyphApp(),
+  ));
 }

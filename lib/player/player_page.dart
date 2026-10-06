@@ -11,6 +11,7 @@ import '../state/providers.dart';
 import '../ui/theme.dart';
 
 const _panelWidth = 320.0;
+const _seekStep = Duration(seconds: 10);
 
 int zapIndex(int current, int delta, int length) => (current + delta) % length;
 
@@ -28,18 +29,30 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   late int _index = widget.index;
   bool _panel = true;
   Timer? _hide;
+  StreamSubscription<Duration>? _durationSub;
+
+  /// Some "live" entries are really finite videos. mpv reports a duration only
+  /// for those, so a known duration switches on the seek controls.
+  bool _seekable = false;
 
   Channel get _current => widget.queue[_index];
 
   @override
   void initState() {
     super.initState();
+    _durationSub = _player.stream.duration.listen((d) {
+      final seekable = d > Duration.zero;
+      if (seekable != _seekable && mounted) {
+        setState(() => _seekable = seekable);
+      }
+    });
     _open();
     _poke();
   }
 
   void _open() {
     final c = _current;
+    _seekable = false; // re-detected from the new stream's duration
     _player.open(Media(c.url));
     ref.read(dbProvider).markWatched(c.type, c.id, DateTime.now());
     // Riverpod forbids invalidating from initState; refresh after the frame.
@@ -66,8 +79,14 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   @override
   void dispose() {
     _hide?.cancel();
+    _durationSub?.cancel();
     _player.dispose();
     super.dispose();
+  }
+
+  void _seekBy(Duration delta) {
+    final target = _player.state.position + delta;
+    _player.seek(target < Duration.zero ? Duration.zero : target);
   }
 
   /// Live-TV controls: previous/next channel of the group, play/pause, volume,
@@ -81,8 +100,20 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         onPressed: () => _zap(delta),
       ),
     );
+    final barMargin = EdgeInsets.only(
+      left: 16,
+      right: !fullscreen && _panel ? _panelWidth + 16 : 16,
+    );
+    Widget seekButton(String tip, IconData icon, Duration d) => Tooltip(
+      message: tip,
+      child: MaterialDesktopCustomButton(
+        icon: Icon(icon),
+        onPressed: () => _seekBy(d),
+      ),
+    );
     return MaterialDesktopVideoControlsThemeData(
-      displaySeekBar: false,
+      displaySeekBar: _seekable,
+      seekBarMargin: barMargin,
       automaticallyImplySkipNextButton: false,
       automaticallyImplySkipPreviousButton: false,
       buttonBarButtonColor: Tokens.text,
@@ -94,17 +125,25 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
             _player.setVolume(_player.state.volume == 0 ? 100 : 0),
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
+        if (_seekable) ...{
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+              _seekBy(-_seekStep),
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+              _seekBy(_seekStep),
+        },
       },
       // Keep the bar clear of the channel panel (which is not shown in fullscreen).
-      bottomButtonBarMargin: EdgeInsets.only(
-        left: 16,
-        right: !fullscreen && _panel ? _panelWidth + 16 : 16,
-      ),
+      bottomButtonBarMargin: barMargin,
       bottomButtonBar: [
         zapButton('Canal anterior (↑)', Icons.skip_previous, -1),
+        if (_seekable)
+          seekButton('Voltar 10 s (←)', Icons.replay_10, -_seekStep),
         const MaterialDesktopPlayOrPauseButton(),
+        if (_seekable)
+          seekButton('Avançar 10 s (→)', Icons.forward_10, _seekStep),
         zapButton('Próximo canal (↓)', Icons.skip_next, 1),
         const MaterialDesktopVolumeButton(),
+        if (_seekable) const MaterialDesktopPositionIndicator(),
         const Spacer(),
         const MaterialDesktopFullscreenButton(),
       ],
@@ -126,6 +165,12 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         },
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
+        if (_seekable) ...{
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+              _seekBy(-_seekStep),
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+              _seekBy(_seekStep),
+        },
       },
       child: Focus(
         autofocus: true,

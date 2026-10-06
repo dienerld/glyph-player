@@ -128,4 +128,22 @@ void main() {
       expect(db.progressOf('movie', '1')!.positionMs, 700000);
     },
   );
+
+  test('upsert stores series name, season and episode', () {
+    load([
+      const StreamEntry(
+        type: StreamType.series,
+        id: '9',
+        name: 'Dark S02E03',
+        group: 'Series | Netflix',
+        logo: '',
+        url: 'http://h/series/U/P/9.mp4',
+        seriesName: 'Dark',
+        season: 2,
+        episode: 3,
+      ),
+    ]);
+    final ep = db.episodes('Series | Netflix', 'Dark').single;
+    expect((ep.season, ep.episode, ep.item.id), (2, 3, '9'));
+  });
 }

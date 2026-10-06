@@ -1,5 +1,6 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import 'series_title.dart';
 import 'stream_entry.dart';
 
 class GroupCount {
@@ -11,6 +12,12 @@ class GroupCount {
 class Progress {
   const Progress(this.positionMs, this.durationMs);
   final int positionMs, durationMs;
+}
+
+class Episode {
+  const Episode(this.item, this.season, this.episode);
+  final Channel item;
+  final int season, episode;
 }
 
 class Channel {
@@ -30,6 +37,8 @@ const _schema = '''
 CREATE TABLE IF NOT EXISTS streams(
   type TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, grp TEXT NOT NULL,
   logo TEXT NOT NULL, url TEXT NOT NULL, run INTEGER NOT NULL,
+  series_name TEXT NOT NULL DEFAULT '', season INTEGER NOT NULL DEFAULT 0,
+  episode INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY(type, id));
 CREATE INDEX IF NOT EXISTS streams_type_grp ON streams(type, grp);
 CREATE VIRTUAL TABLE IF NOT EXISTS streams_fts USING fts5(
@@ -43,6 +52,11 @@ CREATE TABLE IF NOT EXISTS progress(
   type TEXT NOT NULL, id TEXT NOT NULL, position_ms INTEGER NOT NULL,
   duration_ms INTEGER NOT NULL, updated_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
+CREATE TABLE IF NOT EXISTS series_favorites(
+  grp TEXT NOT NULL, series_name TEXT NOT NULL, PRIMARY KEY(grp, series_name));
+CREATE TABLE IF NOT EXISTS series_hidden(
+  grp TEXT NOT NULL, series_name TEXT NOT NULL, hidden_at INTEGER NOT NULL,
+  PRIMARY KEY(grp, series_name));
 CREATE TABLE IF NOT EXISTS recents(
   type TEXT NOT NULL, id TEXT NOT NULL, watched_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
@@ -56,6 +70,7 @@ class Db {
       'PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=NORMAL;',
     );
     _db.execute(_schema);
+    _migrate();
   }
 
   factory Db.open(String path) => Db._(sqlite3.open(path));
@@ -64,6 +79,52 @@ class Db {
   final Database _db;
 
   void close() => _db.close();
+
+  /// Adds the series columns to databases created before them and fills them
+  /// from the stored names. Idempotent.
+  void _migrate() {
+    final cols = _db
+        .select('PRAGMA table_info(streams)')
+        .map((r) => r['name'] as String)
+        .toSet();
+    if (!cols.contains('series_name')) {
+      _db.execute('BEGIN');
+      try {
+        _db.execute(
+          "ALTER TABLE streams ADD COLUMN series_name TEXT NOT NULL DEFAULT ''",
+        );
+        _db.execute(
+          'ALTER TABLE streams ADD COLUMN season INTEGER NOT NULL DEFAULT 0',
+        );
+        _db.execute(
+          'ALTER TABLE streams ADD COLUMN episode INTEGER NOT NULL DEFAULT 0',
+        );
+        final upd = _db.prepare(
+          'UPDATE streams SET series_name=?, season=?, episode=? '
+          'WHERE type=? AND id=?',
+        );
+        try {
+          final rows = _db.select(
+            "SELECT id, name FROM streams WHERE type='series'",
+          );
+          for (final r in rows) {
+            final t = parseSeriesName(r['name'] as String);
+            upd.execute([t.name, t.season, t.episode, 'series', r['id']]);
+          }
+        } finally {
+          upd.close();
+        }
+        _db.execute('COMMIT');
+      } catch (_) {
+        _db.execute('ROLLBACK');
+        rethrow;
+      }
+    }
+    _db.execute(
+      'CREATE INDEX IF NOT EXISTS streams_series ON streams(type, grp, series_name)',
+    );
+    _db.execute('PRAGMA user_version = 1');
+  }
 
   int streamCount() =>
       _db.select('SELECT COUNT(*) AS n FROM streams').first['n'] as int;
@@ -76,14 +137,28 @@ class Db {
 
   void upsertBatch(List<StreamEntry> entries, int run) {
     final stmt = _db.prepare(
-      'INSERT INTO streams(type,id,name,grp,logo,url,run) VALUES(?,?,?,?,?,?,?) '
+      'INSERT INTO streams(type,id,name,grp,logo,url,run,series_name,season,episode) '
+      'VALUES(?,?,?,?,?,?,?,?,?,?) '
       'ON CONFLICT(type,id) DO UPDATE SET name=excluded.name, grp=excluded.grp, '
-      'logo=excluded.logo, url=excluded.url, run=excluded.run',
+      'logo=excluded.logo, url=excluded.url, run=excluded.run, '
+      'series_name=excluded.series_name, season=excluded.season, '
+      'episode=excluded.episode',
     );
     _db.execute('BEGIN');
     try {
       for (final e in entries) {
-        stmt.execute([e.type.name, e.id, e.name, e.group, e.logo, e.url, run]);
+        stmt.execute([
+          e.type.name,
+          e.id,
+          e.name,
+          e.group,
+          e.logo,
+          e.url,
+          run,
+          e.seriesName,
+          e.season,
+          e.episode,
+        ]);
       }
       _db.execute('COMMIT');
     } catch (_) {
@@ -207,17 +282,26 @@ class Db {
     [limit],
   );
 
-  List<Channel> _channels(String sql, List<Object?> args) => _db
-      .select(sql, args)
-      .map(
-        (r) => Channel(
-          type: r['type'] as String,
-          id: r['id'] as String,
-          name: r['name'] as String,
-          group: r['grp'] as String,
-          logo: r['logo'] as String,
-          url: r['url'] as String,
-        ),
+  /// Episodes of one series, ordered by season, episode, then provider order.
+  List<Episode> episodes(String group, String name) => _db
+      .select(
+        "SELECT $_cols, s.season, s.episode FROM streams s "
+        "WHERE s.type='series' AND s.grp=? AND s.series_name=? "
+        "ORDER BY s.season, s.episode, s.rowid",
+        [group, name],
       )
+      .map((r) => Episode(_channel(r), r['season'] as int, r['episode'] as int))
       .toList();
+
+  Channel _channel(Row r) => Channel(
+    type: r['type'] as String,
+    id: r['id'] as String,
+    name: r['name'] as String,
+    group: r['grp'] as String,
+    logo: r['logo'] as String,
+    url: r['url'] as String,
+  );
+
+  List<Channel> _channels(String sql, List<Object?> args) =>
+      _db.select(sql, args).map(_channel).toList();
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../data/movie_title.dart';
 import '../../ui/theme.dart';
-import 'movie_player_page.dart';
+import 'vod_player_page.dart';
 
 /// Typographic card: most movies have no poster, so the title leads.
 class MovieCard extends StatefulWidget {
@@ -21,7 +21,9 @@ class _MovieCardState extends State<MovieCard> {
   bool _active = false;
 
   void _open() => Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => MoviePlayerPage(movie: widget.movie)),
+    MaterialPageRoute(
+      builder: (_) => VodPlayerPage(queue: [widget.movie], index: 0),
+    ),
   );
 
   @override

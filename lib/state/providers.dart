@@ -84,6 +84,36 @@ final continueWatchingProvider = FutureProvider<List<Channel>>(
   ),
 );
 
+final seriesSectionsProvider = FutureProvider<List<GroupCount>>((ref) async {
+  final show = ref.watch(showAdultProvider);
+  return ref
+      .watch(dbProvider)
+      .groups('series')
+      .where((g) => show || !isAdultGroup(g.name))
+      .toList();
+});
+final seriesInProvider = FutureProvider.family<List<SeriesSummary>, String>(
+  (ref, group) async => ref.watch(dbProvider).seriesIn(group),
+);
+final seriesEpisodesProvider =
+    FutureProvider.family<List<Episode>, (String, String)>(
+      (ref, key) async => ref.watch(dbProvider).episodes(key.$1, key.$2),
+    );
+List<SeriesSummary> _visibleSeries(List<SeriesSummary> l, bool show) =>
+    show ? l : l.where((s) => !isAdultGroup(s.group)).toList();
+final seriesFavoritesProvider = FutureProvider<List<SeriesSummary>>(
+  (ref) async => _visibleSeries(
+    ref.watch(dbProvider).seriesFavorites(),
+    ref.watch(showAdultProvider),
+  ),
+);
+final continueSeriesProvider = FutureProvider<List<SeriesSummary>>(
+  (ref) async => _visibleSeries(
+    ref.watch(dbProvider).continueSeries(),
+    ref.watch(showAdultProvider),
+  ),
+);
+
 /// Search keyed by (type, text): `('live', 'globo')`.
 final searchProvider = FutureProvider.family<List<Channel>, (String, String)>((
   ref,
@@ -154,6 +184,11 @@ class ImportController extends Notifier<ImportState> {
         ..invalidate(moviesInProvider)
         ..invalidate(continueWatchingProvider)
         ..invalidate(searchProvider)
+        ..invalidate(seriesSectionsProvider)
+        ..invalidate(seriesInProvider)
+        ..invalidate(seriesEpisodesProvider)
+        ..invalidate(seriesFavoritesProvider)
+        ..invalidate(continueSeriesProvider)
         ..invalidate(groupChannelsProvider)
         ..invalidate(favoritesProvider)
         ..invalidate(recentsProvider);

@@ -6,7 +6,8 @@ Duration? resumePosition(int positionMs, int durationMs) {
   if (positionMs < _minResumeMs) {
     return null;
   }
-  if (durationMs > 0 && positionMs / durationMs > _finishedFraction)
+  if (durationMs > 0 && positionMs / durationMs > _finishedFraction) {
     return null;
+  }
   return Duration(milliseconds: positionMs);
 }

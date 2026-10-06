@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
+import '../movies/movie_card.dart';
 import 'channel_card.dart';
 
 class ChannelSearchDelegate extends SearchDelegate<void> {
@@ -60,7 +61,9 @@ class ChannelSearchDelegate extends SearchDelegate<void> {
                   mainAxisSpacing: Tokens.gap,
                 ),
                 itemCount: list.length,
-                itemBuilder: (_, i) => ChannelCard(queue: list, index: i),
+                itemBuilder: (_, i) => type == 'movie'
+                    ? MovieCard(movie: list[i])
+                    : ChannelCard(queue: list, index: i),
               ),
       );
     },

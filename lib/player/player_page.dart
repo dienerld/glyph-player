@@ -10,6 +10,8 @@ import '../data/database.dart';
 import '../state/providers.dart';
 import '../ui/theme.dart';
 
+const _panelWidth = 320.0;
+
 int zapIndex(int current, int delta, int length) => (current + delta) % length;
 
 class PlayerPage extends ConsumerStatefulWidget {
@@ -71,7 +73,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   /// Live-TV controls: previous/next channel of the group, play/pause, volume,
   /// fullscreen. Shortcuts are replaced so up/down keep meaning "zap" (the
   /// defaults seek and change volume) and also work inside fullscreen.
-  MaterialDesktopVideoControlsThemeData _controls() {
+  MaterialDesktopVideoControlsThemeData _controls({required bool fullscreen}) {
     Widget zapButton(String tip, IconData icon, int delta) => Tooltip(
       message: tip,
       child: MaterialDesktopCustomButton(
@@ -93,6 +95,11 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
       },
+      // Keep the bar clear of the channel panel (which is not shown in fullscreen).
+      bottomButtonBarMargin: EdgeInsets.only(
+        left: 16,
+        right: !fullscreen && _panel ? _panelWidth + 16 : 16,
+      ),
       bottomButtonBar: [
         zapButton('Canal anterior (↑)', Icons.skip_previous, -1),
         const MaterialDesktopPlayOrPauseButton(),
@@ -130,8 +137,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
               children: [
                 Positioned.fill(
                   child: MaterialDesktopVideoControlsTheme(
-                    normal: _controls(),
-                    fullscreen: _controls(),
+                    normal: _controls(fullscreen: false),
+                    fullscreen: _controls(fullscreen: true),
                     child: Video(
                       controller: _video,
                       controls: MaterialDesktopVideoControls,
@@ -156,8 +163,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                   curve: Tokens.slideCurve,
                   top: 0,
                   bottom: 0,
-                  right: _panel ? 0 : -320,
-                  width: 320,
+                  right: _panel ? 0 : -_panelWidth,
+                  width: _panelWidth,
                   child: Material(
                     color: Tokens.panel.withValues(alpha: 0.94),
                     child: Column(

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../data/content_filter.dart';
 import '../data/database.dart';
 import '../data/downloader.dart';
 import '../data/importer.dart';
@@ -24,21 +25,73 @@ final playlistUrlStoreProvider = Provider<PlaylistUrlStore>(
   (ref) => const PlaylistUrlStore(),
 );
 
-final liveGroupsProvider = FutureProvider<List<String>>(
-  (ref) async => ref.watch(dbProvider).liveGroups(),
+class ShowAdultNotifier extends Notifier<bool> {
+  static const _key = 'show_adult';
+
+  @override
+  bool build() => ref.read(dbProvider).setting(_key) == '1';
+
+  void set(bool value) {
+    ref.read(dbProvider).setSetting(_key, value ? '1' : '0');
+    state = value;
+  }
+}
+
+/// Adult groups are hidden unless the user opts in (Settings).
+final showAdultProvider = NotifierProvider<ShowAdultNotifier, bool>(
+  ShowAdultNotifier.new,
 );
+
+List<Channel> _visible(List<Channel> items, bool showAdult) =>
+    showAdult ? items : items.where((c) => !isAdultGroup(c.group)).toList();
+
+final liveGroupsProvider = FutureProvider<List<String>>((ref) async {
+  final show = ref.watch(showAdultProvider);
+  return ref
+      .watch(dbProvider)
+      .groups('live')
+      .map((g) => g.name)
+      .where((n) => show || !isAdultGroup(n))
+      .toList();
+});
 final groupChannelsProvider = FutureProvider.family<List<Channel>, String>(
-  (ref, group) async => ref.watch(dbProvider).liveChannels(group),
+  (ref, group) async => ref.watch(dbProvider).channels('live', group),
 );
 final favoritesProvider = FutureProvider<List<Channel>>(
-  (ref) async => ref.watch(dbProvider).favorites(),
+  (ref) async =>
+      _visible(ref.watch(dbProvider).favorites(), ref.watch(showAdultProvider)),
 );
 final recentsProvider = FutureProvider<List<Channel>>(
-  (ref) async => ref.watch(dbProvider).recents(),
+  (ref) async =>
+      _visible(ref.watch(dbProvider).recents(), ref.watch(showAdultProvider)),
 );
-final searchProvider = FutureProvider.family<List<Channel>, String>(
-  (ref, q) async => ref.watch(dbProvider).searchLive(q),
+
+final movieGroupsProvider = FutureProvider<List<GroupCount>>((ref) async {
+  final show = ref.watch(showAdultProvider);
+  return ref
+      .watch(dbProvider)
+      .groups('movie')
+      .where((g) => show || !isAdultGroup(g.name))
+      .toList();
+});
+final moviesInProvider = FutureProvider.family<List<Channel>, String>(
+  (ref, group) async => ref.watch(dbProvider).channels('movie', group),
 );
+final continueWatchingProvider = FutureProvider<List<Channel>>(
+  (ref) async => _visible(
+    ref.watch(dbProvider).continueWatching(),
+    ref.watch(showAdultProvider),
+  ),
+);
+
+/// Search keyed by (type, text): `('live', 'globo')`.
+final searchProvider = FutureProvider.family<List<Channel>, (String, String)>((
+  ref,
+  q,
+) async {
+  final show = ref.watch(showAdultProvider);
+  return _visible(ref.watch(dbProvider).search(q.$1, q.$2), show);
+});
 
 sealed class ImportState {
   const ImportState();
@@ -97,6 +150,10 @@ class ImportController extends Notifier<ImportState> {
       state = const ImportIdle();
       ref
         ..invalidate(liveGroupsProvider)
+        ..invalidate(movieGroupsProvider)
+        ..invalidate(moviesInProvider)
+        ..invalidate(continueWatchingProvider)
+        ..invalidate(searchProvider)
         ..invalidate(groupChannelsProvider)
         ..invalidate(favoritesProvider)
         ..invalidate(recentsProvider);

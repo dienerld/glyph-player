@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
+import '../movies/movie_card.dart';
 import 'channel_card.dart';
 
 class ChannelSearchDelegate extends SearchDelegate<void> {
-  ChannelSearchDelegate() : super(searchFieldLabel: 'Buscar canal');
+  ChannelSearchDelegate({this.type = 'live'})
+    : super(searchFieldLabel: type == 'live' ? 'Buscar canal' : 'Buscar filme');
+  final String type;
 
   @override
   ThemeData appBarTheme(BuildContext context) => Theme.of(context).copyWith(
@@ -36,7 +39,7 @@ class ChannelSearchDelegate extends SearchDelegate<void> {
 
   Widget _results() => Consumer(
     builder: (context, ref, _) {
-      final r = ref.watch(searchProvider(query));
+      final r = ref.watch(searchProvider((type, query)));
       return r.when(
         loading: () => const SizedBox.shrink(),
         error: (e, _) => Center(child: Text('Erro: $e')),
@@ -58,7 +61,9 @@ class ChannelSearchDelegate extends SearchDelegate<void> {
                   mainAxisSpacing: Tokens.gap,
                 ),
                 itemCount: list.length,
-                itemBuilder: (_, i) => ChannelCard(queue: list, index: i),
+                itemBuilder: (_, i) => type == 'movie'
+                    ? MovieCard(movie: list[i])
+                    : ChannelCard(queue: list, index: i),
               ),
       );
     },

@@ -24,7 +24,7 @@ void main() {
     final n = await importInBackground(dbPath, f, (_) {});
     expect(n, 2);
     final db = Db.open(dbPath);
-    expect(db.liveChannels('G'), hasLength(2));
+    expect(db.channels('live', 'G'), hasLength(2));
     db.close();
   });
 
@@ -52,7 +52,7 @@ void main() {
       throwsFormatException,
     );
     final db = Db.open(dbPath);
-    expect(db.liveChannels('G'), hasLength(1));
+    expect(db.channels('live', 'G'), hasLength(1));
     db.close();
   });
 
@@ -69,7 +69,7 @@ void main() {
         throwsFormatException,
       );
       final db = Db.open(dbPath);
-      expect(db.liveChannels('G').map((c) => c.id), ['1']);
+      expect(db.channels('live', 'G').map((c) => c.id), ['1']);
       db.close();
     },
   );
@@ -86,7 +86,7 @@ void main() {
         throwsFormatException,
       );
       final db = Db.open(dbPath);
-      expect(db.liveChannels('G'), hasLength(10));
+      expect(db.channels('live', 'G'), hasLength(10));
       db.close();
     },
   );

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 
+void openSettings(BuildContext context) => Navigator.of(
+  context,
+).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
   @override
@@ -62,6 +66,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 FilledButton(
                   onPressed: s is ImportRunning ? null : _save,
                   child: const Text('Salvar e atualizar'),
+                ),
+                const SizedBox(height: 24),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Mostrar conteúdo adulto'),
+                  subtitle: const Text(
+                    'Oculto por padrão em Ao vivo, Filmes e na busca.',
+                    style: TextStyle(color: Tokens.textDim),
+                  ),
+                  value: ref.watch(showAdultProvider),
+                  onChanged: (v) => ref.read(showAdultProvider.notifier).set(v),
                 ),
                 const SizedBox(height: 16),
                 switch (s) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/live/live_home_page.dart';
+import 'features/shell/app_shell.dart';
 import 'ui/theme.dart';
 
 class GlyphApp extends StatelessWidget {
@@ -9,6 +9,6 @@ class GlyphApp extends StatelessWidget {
     title: 'Glyph Player',
     debugShowCheckedModeBanner: false,
     theme: buildTheme(),
-    home: const LiveHomePage(),
+    home: const AppShell(),
   );
 }

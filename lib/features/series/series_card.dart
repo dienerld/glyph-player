@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
+import '../shared/cached_thumb.dart';
 import '../shared/monogram.dart';
 import 'series_page.dart';
 
@@ -127,14 +128,10 @@ class Poster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = Center(child: Monogram(name: name, size: 40));
-    if (url.isEmpty) return fallback;
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
+    return CachedThumb(
+      url: url,
       cacheWidth: 320,
-      errorBuilder: (_, _, _) => fallback,
-      loadingBuilder: (_, child, p) => p == null ? child : fallback,
+      fallback: Center(child: Monogram(name: name, size: 40)),
     );
   }
 }

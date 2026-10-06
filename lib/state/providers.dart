@@ -9,6 +9,7 @@ import '../data/database.dart';
 import '../data/downloader.dart';
 import '../data/importer.dart';
 import '../data/playlist_url_store.dart';
+import '../data/thumb_cache.dart';
 
 class AppPaths {
   const AppPaths({required this.dbPath, required this.downloadPath});
@@ -16,6 +17,9 @@ class AppPaths {
 }
 
 final dbProvider = Provider<Db>(
+  (ref) => throw UnimplementedError('override in main'),
+);
+final thumbCacheProvider = Provider<ThumbCache>(
   (ref) => throw UnimplementedError('override in main'),
 );
 final appPathsProvider = Provider<AppPaths>(

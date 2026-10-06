@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../data/movie_title.dart';
 import '../../ui/theme.dart';
+import '../shared/cached_thumb.dart';
 import 'vod_player_page.dart';
 
 /// Typographic card: most movies have no poster, so the title leads.
@@ -56,57 +57,65 @@ class _MovieCardState extends State<MovieCard> {
                 color: _active ? Tokens.tally : Colors.transparent,
                 width: 2,
               ),
-              image: m.logo.isEmpty
-                  ? null
-                  : DecorationImage(
-                      image: NetworkImage(m.logo),
-                      fit: BoxFit.cover,
-                      opacity: 0.35,
-                      onError: (_, _) {},
-                    ),
             ),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Expanded(
-                  child: Text(
-                    t.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: Tokens.display,
-                      fontSize: 17,
-                      height: 22 / 17,
-                      fontWeight: FontWeight.w600,
+                if (m.logo.isNotEmpty)
+                  Opacity(
+                    opacity: 0.35,
+                    child: CachedThumb(
+                      url: m.logo,
+                      cacheWidth: 420,
+                      fallback: const SizedBox.shrink(),
                     ),
                   ),
-                ),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (t.year != null)
-                      Text(
-                        '${t.year}',
-                        style: const TextStyle(
-                          color: Tokens.textDim,
-                          fontSize: 13,
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: Tokens.display,
+                            fontSize: 17,
+                            height: 22 / 17,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    for (final tag in t.tags) _Tag(tag),
-                  ],
-                ),
-                if (widget.progress != null) ...[
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: widget.progress,
-                    minHeight: 3,
-                    color: Tokens.tally,
-                    backgroundColor: Tokens.line,
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (t.year != null)
+                            Text(
+                              '${t.year}',
+                              style: const TextStyle(
+                                color: Tokens.textDim,
+                                fontSize: 13,
+                              ),
+                            ),
+                          for (final tag in t.tags) _Tag(tag),
+                        ],
+                      ),
+                      if (widget.progress != null) ...[
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: widget.progress,
+                          minHeight: 3,
+                          color: Tokens.tally,
+                          backgroundColor: Tokens.line,
+                        ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
               ],
             ),
           ),

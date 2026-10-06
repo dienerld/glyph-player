@@ -50,7 +50,9 @@ StreamEntry? _entry(String inf, String url) {
   final id = dot > 0 ? last.substring(0, dot) : last;
 
   var group = attrs['group-title'] ?? '';
-  if (group.startsWith(_livePrefix)) group = group.substring(_livePrefix.length);
+  if (group.startsWith(_livePrefix)) {
+    group = group.substring(_livePrefix.length);
+  }
 
   return StreamEntry(
     type: type,

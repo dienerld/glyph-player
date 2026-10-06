@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph_player/data/downloader.dart';
 
 void main() {
+  group('idle timeout', idleTimeoutTests);
   late Directory tmp;
   late HttpServer server;
   setUp(() async {
@@ -49,6 +51,38 @@ void main() {
     await expectLater(
       downloadTo(Uri.parse('http://127.0.0.1:${raw.port}/get.php'), dest),
       throwsA(anything),
+    );
+    expect(dest.readAsStringSync(), 'old');
+    expect(File('${dest.path}.part').existsSync(), isFalse);
+  });
+}
+
+void idleTimeoutTests() {
+  late Directory tmp;
+  setUp(() async => tmp = await Directory.systemTemp.createTemp('dl2'));
+  tearDown(() => tmp.delete(recursive: true));
+
+  test('stalled body times out and leaves existing file intact', () async {
+    final raw = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final held = <Socket>[];
+    addTearDown(() async {
+      for (final s in held) {
+        s.destroy();
+      }
+      await raw.close();
+    });
+    raw.listen((s) {
+      held.add(s);
+      s.add('HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nshort'.codeUnits);
+    });
+    final dest = File('${tmp.path}/p.m3u')..writeAsStringSync('old');
+    await expectLater(
+      downloadTo(
+        Uri.parse('http://127.0.0.1:${raw.port}/get.php'),
+        dest,
+        idleTimeout: const Duration(milliseconds: 300),
+      ),
+      throwsA(isA<TimeoutException>()),
     );
     expect(dest.readAsStringSync(), 'old');
     expect(File('${dest.path}.part').existsSync(), isFalse);

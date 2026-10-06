@@ -32,19 +32,62 @@ void main() {
     final f = File('${tmp.path}/l.m3u');
     f.writeAsBytesSync([
       ...'#EXTM3U\n'.codeUnits,
-      ...'#EXTINF:-1 tvg-id="" tvg-name="Bad" tvg-logo="" group-title="G",Bad '.codeUnits,
-      0xFF, 0xFE,
+      ...'#EXTINF:-1 tvg-id="" tvg-name="Bad" tvg-logo="" group-title="G",Bad '
+          .codeUnits,
+      0xFF,
+      0xFE,
       ...'\nhttp://h/live/U/P/1.ts\n'.codeUnits,
     ]);
     expect(await importFile(dbPath: dbPath, file: f), 1);
   });
 
   test('empty list throws and does not wipe existing data', () async {
-    await importFile(dbPath: dbPath, file: await list('#EXTM3U\n${entry('1', 'A')}'));
+    await importFile(
+      dbPath: dbPath,
+      file: await list('#EXTM3U\n${entry('1', 'A')}'),
+    );
     final empty = await list('');
-    await expectLater(importFile(dbPath: dbPath, file: empty), throwsFormatException);
+    await expectLater(
+      importFile(dbPath: dbPath, file: empty),
+      throwsFormatException,
+    );
     final db = Db.open(dbPath);
     expect(db.liveChannels('G'), hasLength(1));
     db.close();
   });
+
+  test(
+    'list without #EXTM3U header is refused and keeps existing data',
+    () async {
+      await importFile(
+        dbPath: dbPath,
+        file: await list('#EXTM3U\n${entry('1', 'A')}'),
+      );
+      final html = await list('<html>login expired</html>\n${entry('9', 'X')}');
+      await expectLater(
+        importFile(dbPath: dbPath, file: html),
+        throwsFormatException,
+      );
+      final db = Db.open(dbPath);
+      expect(db.liveChannels('G').map((c) => c.id), ['1']);
+      db.close();
+    },
+  );
+
+  test(
+    'a list under half the previous size is refused and keeps existing data',
+    () async {
+      final big =
+          '#EXTM3U\n${[for (var i = 0; i < 10; i++) entry('$i', 'C$i')].join()}';
+      await importFile(dbPath: dbPath, file: await list(big));
+      final tiny = await list('#EXTM3U\n${entry('0', 'C0')}');
+      await expectLater(
+        importFile(dbPath: dbPath, file: tiny),
+        throwsFormatException,
+      );
+      final db = Db.open(dbPath);
+      expect(db.liveChannels('G'), hasLength(10));
+      db.close();
+    },
+  );
 }

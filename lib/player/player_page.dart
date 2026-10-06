@@ -40,7 +40,10 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     final c = _current;
     _player.open(Media(c.url));
     ref.read(dbProvider).markWatched(c.type, c.id, DateTime.now());
-    ref.invalidate(recentsProvider);
+    // Riverpod forbids invalidating from initState; refresh after the frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.invalidate(recentsProvider);
+    });
   }
 
   /// Shows the panel and hides it again after 2.5 s without activity.
@@ -78,7 +81,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
           _hide?.cancel();
           setState(() => _panel = !_panel);
         },
-        const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.of(context).pop(),
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).pop(),
       },
       child: Focus(
         autofocus: true,
@@ -86,69 +90,93 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
           backgroundColor: Colors.black,
           body: MouseRegion(
             onHover: (_) => _poke(),
-            child: Stack(children: [
-              Positioned.fill(child: Video(controller: _video, controls: NoVideoControls)),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: AnimatedOpacity(
-                  opacity: _panel ? 1 : 0,
-                  duration: reduce ? Duration.zero : Tokens.hover,
-                  child: IconButton(
-                    tooltip: 'Voltar',
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.of(context).pop(),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Video(controller: _video, controls: NoVideoControls),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: AnimatedOpacity(
+                    opacity: _panel ? 1 : 0,
+                    duration: reduce ? Duration.zero : Tokens.hover,
+                    child: IconButton(
+                      tooltip: 'Voltar',
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
                 ),
-              ),
-              AnimatedPositioned(
-                duration: reduce ? Duration.zero : Tokens.slide,
-                curve: Tokens.slideCurve,
-                top: 0,
-                bottom: 0,
-                right: _panel ? 0 : -320,
-                width: 320,
-                child: Material(
-                  color: Tokens.panel.withValues(alpha: 0.94),
-                  child: Column(children: [
-                    ListTile(
-                      title: Text(_current.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(_current.group,
-                          maxLines: 1, style: const TextStyle(color: Tokens.textDim)),
-                      trailing: IconButton(
-                        tooltip: fav ? 'Remover dos favoritos' : 'Favoritar',
-                        icon: Icon(fav ? Icons.star : Icons.star_border,
-                            color: fav ? Tokens.tally : null),
-                        onPressed: () {
-                          db.setFavorite(_current.type, _current.id, !fav);
-                          ref.invalidate(favoritesProvider);
-                          setState(() {});
-                        },
-                      ),
+                AnimatedPositioned(
+                  duration: reduce ? Duration.zero : Tokens.slide,
+                  curve: Tokens.slideCurve,
+                  top: 0,
+                  bottom: 0,
+                  right: _panel ? 0 : -320,
+                  width: 320,
+                  child: Material(
+                    color: Tokens.panel.withValues(alpha: 0.94),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            _current.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            _current.group,
+                            maxLines: 1,
+                            style: const TextStyle(color: Tokens.textDim),
+                          ),
+                          trailing: IconButton(
+                            tooltip: fav
+                                ? 'Remover dos favoritos'
+                                : 'Favoritar',
+                            icon: Icon(
+                              fav ? Icons.star : Icons.star_border,
+                              color: fav ? Tokens.tally : null,
+                            ),
+                            onPressed: () {
+                              db.setFavorite(_current.type, _current.id, !fav);
+                              ref.invalidate(favoritesProvider);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const Divider(height: 1, color: Tokens.line),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: widget.queue.length,
+                            itemBuilder: (_, i) {
+                              final sel = i == _index;
+                              return ListTile(
+                                dense: true,
+                                tileColor: sel ? Tokens.tallyDim : null,
+                                leading: sel
+                                    ? const Icon(
+                                        Icons.circle,
+                                        size: 10,
+                                        color: Tokens.tally,
+                                      )
+                                    : const SizedBox(width: 10),
+                                title: Text(
+                                  widget.queue[i].name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                onTap: () => _zap(i - _index),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1, color: Tokens.line),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: widget.queue.length,
-                        itemBuilder: (_, i) {
-                          final sel = i == _index;
-                          return ListTile(
-                            dense: true,
-                            tileColor: sel ? Tokens.tallyDim : null,
-                            leading: sel
-                                ? const Icon(Icons.circle, size: 10, color: Tokens.tally)
-                                : const SizedBox(width: 10),
-                            title: Text(widget.queue[i].name,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                            onTap: () => _zap(i - _index),
-                          );
-                        },
-                      ),
-                    ),
-                  ]),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ),
         ),
       ),

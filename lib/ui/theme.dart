@@ -43,7 +43,9 @@ ThemeData buildTheme() {
     splashFactory: NoSplash.splashFactory,
   );
   return base.copyWith(
-    textTheme: base.textTheme.apply(bodyColor: Tokens.text, displayColor: Tokens.text).copyWith(
+    textTheme: base.textTheme
+        .apply(bodyColor: Tokens.text, displayColor: Tokens.text)
+        .copyWith(
           titleLarge: const TextStyle(
             fontFamily: Tokens.display,
             fontSize: 22,
@@ -64,12 +66,16 @@ ThemeData buildTheme() {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
     ),
-    tooltipTheme: const TooltipThemeData(waitDuration: Duration(milliseconds: 400)),
+    tooltipTheme: const TooltipThemeData(
+      waitDuration: Duration(milliseconds: 400),
+    ),
     scrollbarTheme: ScrollbarThemeData(
       thumbColor: WidgetStatePropertyAll(Tokens.line),
     ),
     inputDecorationTheme: const InputDecorationTheme(
-      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Tokens.tally, width: 2)),
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Tokens.tally, width: 2),
+      ),
     ),
     textSelectionTheme: const TextSelectionThemeData(
       cursorColor: Tokens.tally,

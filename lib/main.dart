@@ -17,11 +17,13 @@ Future<void> main() async {
     dbPath: p.join(dir.path, 'glyph.db'),
     downloadPath: p.join(dir.path, 'playlist.download'),
   );
-  runApp(ProviderScope(
-    overrides: [
-      appPathsProvider.overrideWithValue(paths),
-      dbProvider.overrideWithValue(Db.open(paths.dbPath)),
-    ],
-    child: const GlyphApp(),
-  ));
+  runApp(
+    ProviderScope(
+      overrides: [
+        appPathsProvider.overrideWithValue(paths),
+        dbProvider.overrideWithValue(Db.open(paths.dbPath)),
+      ],
+      child: const GlyphApp(),
+    ),
+  );
 }

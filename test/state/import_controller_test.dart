@@ -19,19 +19,27 @@ void main() {
     final tmp = await Directory.systemTemp.createTemp('ctl');
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((r) {
-      r.response.write('#EXTM3U\n'
-          '#EXTINF:-1 tvg-id="" tvg-name="A" tvg-logo="" group-title="Canais | Globo",A\n'
-          'http://h/live/U/P/1.ts\n');
+      r.response.write(
+        '#EXTM3U\n'
+        '#EXTINF:-1 tvg-id="" tvg-name="A" tvg-logo="" group-title="Canais | Globo",A\n'
+        'http://h/live/U/P/1.ts\n',
+      );
       r.response.close();
     });
-    final paths = AppPaths(dbPath: '${tmp.path}/g.db', downloadPath: '${tmp.path}/p.m3u');
+    final paths = AppPaths(
+      dbPath: '${tmp.path}/g.db',
+      downloadPath: '${tmp.path}/p.m3u',
+    );
     final db = Db.open(paths.dbPath);
-    final c = ProviderContainer(overrides: [
-      dbProvider.overrideWithValue(db),
-      appPathsProvider.overrideWithValue(paths),
-      playlistUrlStoreProvider
-          .overrideWithValue(_FakeStore('http://127.0.0.1:${server.port}/get.php')),
-    ]);
+    final c = ProviderContainer(
+      overrides: [
+        dbProvider.overrideWithValue(db),
+        appPathsProvider.overrideWithValue(paths),
+        playlistUrlStoreProvider.overrideWithValue(
+          _FakeStore('http://127.0.0.1:${server.port}/get.php'),
+        ),
+      ],
+    );
     addTearDown(() async {
       c.dispose();
       db.close();
@@ -48,13 +56,18 @@ void main() {
 
   test('refresh without a configured URL reports a failure', () async {
     final tmp = await Directory.systemTemp.createTemp('ctl');
-    final paths = AppPaths(dbPath: '${tmp.path}/g.db', downloadPath: '${tmp.path}/p.m3u');
+    final paths = AppPaths(
+      dbPath: '${tmp.path}/g.db',
+      downloadPath: '${tmp.path}/p.m3u',
+    );
     final db = Db.open(paths.dbPath);
-    final c = ProviderContainer(overrides: [
-      dbProvider.overrideWithValue(db),
-      appPathsProvider.overrideWithValue(paths),
-      playlistUrlStoreProvider.overrideWithValue(_FakeStore(null)),
-    ]);
+    final c = ProviderContainer(
+      overrides: [
+        dbProvider.overrideWithValue(db),
+        appPathsProvider.overrideWithValue(paths),
+        playlistUrlStoreProvider.overrideWithValue(_FakeStore(null)),
+      ],
+    );
     addTearDown(() async {
       c.dispose();
       db.close();

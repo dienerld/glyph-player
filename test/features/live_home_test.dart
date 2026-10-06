@@ -7,15 +7,19 @@ import 'package:glyph_player/features/live/live_home_page.dart';
 import 'package:glyph_player/state/providers.dart';
 
 Widget app(Db db) => ProviderScope(
-      overrides: [
-        dbProvider.overrideWithValue(db),
-        appPathsProvider.overrideWithValue(const AppPaths(dbPath: ':memory:', downloadPath: '/tmp/x')),
-      ],
-      child: const MaterialApp(home: LiveHomePage()),
-    );
+  overrides: [
+    dbProvider.overrideWithValue(db),
+    appPathsProvider.overrideWithValue(
+      const AppPaths(dbPath: ':memory:', downloadPath: '/tmp/x'),
+    ),
+  ],
+  child: const MaterialApp(home: LiveHomePage()),
+);
 
 void main() {
-  testWidgets('empty DB shows an empty state with a Settings action', (t) async {
+  testWidgets('empty DB shows an empty state with a Settings action', (
+    t,
+  ) async {
     final db = Db.memory();
     await t.pumpWidget(app(db));
     await t.pumpAndSettle();
@@ -28,7 +32,14 @@ void main() {
     final db = Db.memory();
     final run = db.beginRun();
     db.upsertBatch([
-      const StreamEntry(type: StreamType.live, id: '1', name: 'Globo SP', group: 'Globo', logo: '', url: 'http://h/live/U/P/1.ts'),
+      const StreamEntry(
+        type: StreamType.live,
+        id: '1',
+        name: 'Globo SP',
+        group: 'Globo',
+        logo: '',
+        url: 'http://h/live/U/P/1.ts',
+      ),
     ], run);
     db.finishRun(run);
     await t.pumpWidget(app(db));

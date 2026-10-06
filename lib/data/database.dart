@@ -48,6 +48,9 @@ class Db {
 
   void close() => _db.close();
 
+  int streamCount() =>
+      _db.select('SELECT COUNT(*) AS n FROM streams').first['n'] as int;
+
   int beginRun() =>
       (_db
               .select('SELECT COALESCE(MAX(run), 0) + 1 AS r FROM streams')

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Glyph Player
+GenericName=IPTV Player
+GenericName[pt_BR]=Player de IPTV
+Comment=Watch live TV, movies and series from your own M3U playlist
+Comment[pt_BR]=Assista TV ao vivo, filmes e séries da sua própria lista M3U
+Exec=glyph_player
+Icon=dev.glyph.glyph_player
+Terminal=false
+Categories=AudioVideo;Video;Player;
+Keywords=iptv;m3u;tv;live;movies;series;
+StartupWMClass=dev.glyph.glyph_player

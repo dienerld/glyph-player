@@ -11,8 +11,10 @@ import 'movie_card.dart';
 import 'movie_grid_page.dart';
 
 /// `Filmes | Drama` -> `Drama`.
-String categoryLabel(String group) =>
-    group.replaceFirst(RegExp(r'^Filmes\s*\|\s*'), '');
+String categoryLabel(String group) {
+  final label = group.replaceFirst(RegExp(r'^Filmes\s*\|\s*'), '').trim();
+  return label.isEmpty ? 'Sem categoria' : label;
+}
 
 class MovieCategoriesPage extends ConsumerWidget {
   const MovieCategoriesPage({super.key});

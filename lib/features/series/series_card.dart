@@ -78,7 +78,7 @@ class _SeriesCardState extends ConsumerState<SeriesCard> {
                         color: Tokens.tile,
                         borderRadius: BorderRadius.circular(Tokens.radius),
                         border: Border.all(
-                          color: _active ? Tokens.tally : Colors.transparent,
+                          color: _active ? Tokens.accent : Colors.transparent,
                           width: 2,
                         ),
                       ),

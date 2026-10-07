@@ -1,0 +1,28 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="228" fill="#17131C"/>
+  <g transform="translate(154.1,136.2) scale(5.9649)">
+<defs>
+    <linearGradient id="fCrownL" x1="60" y1="6" x2="12" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E9D5FF"></stop><stop offset="100%" stop-color="#C084FC"></stop>
+    </linearGradient>
+    <linearGradient id="fCrownR" x1="60" y1="6" x2="108" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D8B4FE"></stop><stop offset="100%" stop-color="#9333EA"></stop>
+    </linearGradient>
+    <linearGradient id="fPavL" x1="12" y1="46" x2="60" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7E22CE"></stop><stop offset="100%" stop-color="#5C1033"></stop>
+    </linearGradient>
+    <linearGradient id="fPavR" x1="108" y1="46" x2="60" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#581C87"></stop><stop offset="100%" stop-color="#3D0A21"></stop>
+    </linearGradient>
+  </defs>
+  <polygon points="60,6 12,46 60,46" fill="url(#fCrownL)"></polygon>
+  <polygon points="60,6 108,46 60,46" fill="url(#fCrownR)"></polygon>
+  <polygon points="12,46 60,46 60,120" fill="url(#fPavL)"></polygon>
+  <polygon points="108,46 60,46 60,120" fill="url(#fPavR)"></polygon>
+  <g stroke="#F5EBFF" stroke-opacity="0.5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" fill="none">
+    <polygon points="60,6 108,46 60,120 12,46"></polygon>
+    <line x1="12" y1="46" x2="108" y2="46"></line>
+    <line x1="60" y1="6" x2="60" y2="120"></line>
+  </g>
+  </g>
+</svg>

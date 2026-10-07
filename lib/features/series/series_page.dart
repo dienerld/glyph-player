@@ -61,7 +61,7 @@ class _SeriesPageState extends ConsumerState<SeriesPage> {
             tooltip: fav ? 'Remover dos favoritos' : 'Favoritar',
             icon: Icon(
               fav ? Icons.star : Icons.star_border,
-              color: fav ? Tokens.tally : null,
+              color: fav ? Tokens.accent : null,
             ),
             onPressed: () {
               db.setSeriesFavorite(_s.group, _s.name, !fav);
@@ -193,13 +193,13 @@ class _EpisodeTile extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: (p.positionMs / p.durationMs).clamp(0.0, 1.0),
                 minHeight: 3,
-                color: Tokens.tally,
+                color: Tokens.accent,
                 backgroundColor: Tokens.line,
               ),
             )
           : null,
       trailing: done
-          ? const Icon(Icons.check_circle, color: Tokens.tally)
+          ? const Icon(Icons.check_circle, color: Tokens.accent)
           : null,
     );
   }

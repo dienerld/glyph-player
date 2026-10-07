@@ -47,7 +47,11 @@ class _Rail extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 16),
     child: Column(
       children: [
-        const Icon(Icons.live_tv, color: Tokens.tally, size: 28),
+        Image.asset(
+          'assets/icon/glyph_mark.png',
+          width: 30,
+          semanticLabel: 'Glyph Player',
+        ),
         const SizedBox(height: 28),
         _RailItem(
           icon: Icons.sensors,
@@ -109,7 +113,7 @@ class _RailItem extends StatelessWidget {
                   width: 3,
                   height: 24,
                   child: DecoratedBox(
-                    decoration: BoxDecoration(color: Tokens.tally),
+                    decoration: BoxDecoration(color: Tokens.accent),
                   ),
                 ),
               ),

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens from docs/design/DIRECTION.md.
+/// Design tokens, from the Glyph design system (docs/design/DIRECTION.md).
+/// Neutrals carry a trace of purple; purple is the single saturated accent.
 class Tokens {
-  static const ink = Color(0xFF0B0E14);
-  static const panel = Color(0xFF131822);
-  static const tile = Color(0xFF1A2030);
-  static const tileHi = Color(0xFF222A3E);
-  static const line = Color(0xFF2A3348);
-  static const text = Color(0xFFE8ECF4);
-  static const textDim = Color(0xFF98A3BB);
-  static const tally = Color(0xFFFF5B3A);
-  static const tallyDim = Color(0x2EFF5B3A);
+  static const ink = Color(0xFF17131C); // neutral-900: app background
+  static const panel = Color(0xFF241F2B); // neutral-800: rail, panels, cards
+  static const tile = Color(0xFF241F2B); // neutral-800
+  static const tileHi = Color(0xFF453F4E); // neutral-700: hover
+  static const line = Color(0xFF453F4E); // neutral-700: hairlines, bar tracks
+  static const text = Color(0xFFDDD8E0); // neutral-200
+  static const textStrong = Color(0xFFFFFFFF); // titles
+  static const textDim = Color(0xFFA79FB0); // neutral-400 (6.3:1 on ink)
+  static const accent = Color(0xFFC084FC); // purple-400 (6.9:1 on ink)
+  static const accentDim = Color(0x2EC084FC); // purple-400 at 18%
+  static const error = Color(0xFFF87171);
 
   static const radius = 14.0;
   static const gap = 16.0;
@@ -21,19 +24,28 @@ class Tokens {
   static const slide = Duration(milliseconds: 220);
   static const slideCurve = Cubic(0.16, 1, 0.3, 1);
 
-  static const display = 'Bricolage Grotesque';
-  static const ui = 'Instrument Sans';
+  static const display = 'Fraunces';
+  static const ui = 'Manrope';
 }
 
 ThemeData buildTheme() {
   const scheme = ColorScheme.dark(
-    primary: Tokens.tally,
+    primary: Tokens.accent,
     onPrimary: Tokens.ink,
     surface: Tokens.panel,
     onSurface: Tokens.text,
     onSurfaceVariant: Tokens.textDim,
     outline: Tokens.line,
-    error: Color(0xFFFF8A75),
+    error: Tokens.error,
+    // Material defaults would bring a teal in (tonal buttons, chips): keep the
+    // palette to the Glyph neutrals, purple and (support only) wine.
+    secondary: Color(0xFFE77BA6), // wine-400
+    onSecondary: Tokens.ink,
+    secondaryContainer: Tokens.tileHi,
+    onSecondaryContainer: Tokens.text,
+    primaryContainer: Color(0xFF581C87), // purple-900
+    onPrimaryContainer: Color(0xFFF3E8FF), // purple-100
+    surfaceContainerHighest: Tokens.tileHi,
   );
   final base = ThemeData(
     useMaterial3: true,
@@ -44,20 +56,20 @@ ThemeData buildTheme() {
   );
   return base.copyWith(
     textTheme: base.textTheme
-        .apply(bodyColor: Tokens.text, displayColor: Tokens.text)
+        .apply(bodyColor: Tokens.text, displayColor: Tokens.textStrong)
         .copyWith(
           titleLarge: const TextStyle(
             fontFamily: Tokens.display,
             fontSize: 22,
             height: 28 / 22,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),
           headlineMedium: const TextStyle(
             fontFamily: Tokens.display,
             fontSize: 28,
             height: 32 / 28,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             letterSpacing: -0.3,
           ),
         ),
@@ -74,12 +86,12 @@ ThemeData buildTheme() {
     ),
     inputDecorationTheme: const InputDecorationTheme(
       focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: Tokens.tally, width: 2),
+        borderSide: BorderSide(color: Tokens.accent, width: 2),
       ),
     ),
     textSelectionTheme: const TextSelectionThemeData(
-      cursorColor: Tokens.tally,
-      selectionColor: Tokens.tallyDim,
+      cursorColor: Tokens.accent,
+      selectionColor: Tokens.accentDim,
     ),
   );
 }

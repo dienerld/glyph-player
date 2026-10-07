@@ -73,11 +73,15 @@ jobs:
           cp -r linux/icons linux/dev.glyph.glyph_player.desktop linux/install_desktop.sh "dist/$name/linux/"
           cp README.md CHANGELOG.md "dist/$name/"
           tar -C dist -czf "$name.tar.gz" "$name"
+          tool/package_deb.sh "${ver}"
+          mv build/glyph-player_*_amd64.deb .
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: "*.tar.gz"
+          path: |
+            *.tar.gz
+            *.deb
           if-no-files-found: error
 
   build-windows:
@@ -96,6 +100,9 @@ jobs:
       - run: flutter pub get
       - run: flutter build windows --release
 
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
       - name: Package
         shell: pwsh
         run: |
@@ -106,11 +113,17 @@ jobs:
           Copy-Item -Recurse -Path build/windows/x64/runner/Release/* -Destination "dist/$name"
           Copy-Item README.md, CHANGELOG.md -Destination "dist/$name"
           Compress-Archive -Path "dist/$name" -DestinationPath "$name.zip"
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DAppVersion=$ver" windows/installer/glyph_player.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed ($LASTEXITCODE)" }
+          Move-Item build/installer/*-setup.exe .
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: "*.zip"
+          path: |
+            *.zip
+            *-setup.exe
           if-no-files-found: error
 
   release:
@@ -140,8 +153,10 @@ jobs:
 
           ## Instalação
 
-          - **Linux:** extraia o `.tar.gz` e rode `./glyph_player`. Precisa de `libmpv` (no Arch, o pacote `mpv`) e `libsecret`. Para ter ícone e atalho no menu: `./linux/install_desktop.sh`.
-          - **Windows:** extraia o `.zip` e rode `glyph_player.exe`.
+          - **Windows:** rode `glyph-player-*-setup.exe` (instala em Arquivos de Programas, com atalho no Menu Iniciar e desinstalador). A versão portátil é o `.zip`: extraia e rode `glyph_player.exe`.
+          - **Debian/Ubuntu:** `sudo apt install ./glyph-player_*_amd64.deb` (instala em `/opt/glyph-player`, com comando `glyph_player` e entrada no menu).
+          - **Arch Linux:** baixe `PKGBUILD` do repositório (`linux/arch/`) e rode `makepkg -si` nessa pasta (instala em `/opt/glyph-player`, com comando e entrada no menu).
+          - **Outras distros Linux:** extraia o `.tar.gz` e rode `./glyph_player`. Precisa de `libmpv` (no Arch, o pacote `mpv`) e `libsecret`. Para ter ícone e atalho no menu: `./linux/install_desktop.sh`.
 
           Na primeira abertura, vá em Configurações e cole a URL da sua lista M3U_plus.
           EOF

@@ -43,11 +43,19 @@ linux/install_desktop.sh      # ícone e atalho no menu (usuário atual, sem sud
 flutter build windows --release
 ```
 
+Instaladores (rodam depois do build):
+
+```bash
+tool/package_deb.sh X.Y.Z                                   # Linux: build/glyph-player_X.Y.Z_amd64.deb (/opt, /usr/bin, menu)
+(cd linux/arch && makepkg -si)                              # Arch: pacote a partir do .tar.gz da release (pkgver no PKGBUILD)
+iscc /DAppVersion=X.Y.Z windows\installer\glyph_player.iss  # Windows: build\installer\*-setup.exe (Arquivos de Programas)
+```
+
 O `install_desktop.sh` é o que faz o desktop Linux (principalmente no Wayland) mostrar o nome e o ícone do app na barra de tarefas.
 
 ## Releases
 
-Cada tag `vX.Y.Z` dispara o workflow `.github/workflows/release.yml`: analisa, testa, gera os pacotes de Linux (`.tar.gz`) e Windows (`.zip`) e publica tudo numa release do GitHub, com as notas tiradas do `CHANGELOG.md`. A versão da tag precisa ser igual à do `pubspec.yaml`.
+Cada tag `vX.Y.Z` dispara o workflow `.github/workflows/release.yml`: analisa, testa, gera os pacotes de Linux (`.deb` e `.tar.gz`) e Windows (instalador `-setup.exe` e `.zip`) e publica tudo numa release do GitHub, com as notas tiradas do `CHANGELOG.md`. A versão da tag precisa ser igual à do `pubspec.yaml`.
 
 ```bash
 # 1. suba a versão em pubspec.yaml e acrescente a seção "## X.Y.Z" no CHANGELOG.md

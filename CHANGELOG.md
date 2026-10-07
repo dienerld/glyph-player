@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 - 2026-10-07
+
+Instaladores.
+
+- **Windows:** instalador `-setup.exe` (Arquivos de Programas, atalho no Menu Iniciar, desinstalador). O `.zip` continua como versão portátil.
+- **Debian/Ubuntu:** pacote `.deb` (`/opt/glyph-player`, comando `glyph_player` e entrada no menu).
+- **Arch Linux:** `PKGBUILD` em `linux/arch/`.
+
 ## 0.1.0 - 2026-10-06
 
 Primeira versão.

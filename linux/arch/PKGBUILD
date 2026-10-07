@@ -1,0 +1,26 @@
+# Arch Linux package built from the prebuilt release archive (no Flutter needed).
+# Usage: cd linux/arch && makepkg -si
+# Bump pkgver to the release you want; the archive comes from GitHub Releases.
+pkgname=glyph-player
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='IPTV player for your own M3U playlist'
+arch=('x86_64')
+url='https://github.com/dienerld/glyph-player'
+license=('custom')
+depends=('gtk3' 'mpv' 'libsecret')
+options=('!strip')
+source=("$url/releases/download/v$pkgver/glyph-player-$pkgver-linux-x64.tar.gz")
+sha256sums=('SKIP') # replace with `makepkg -g` output once the release is published
+
+package() {
+  local src="$srcdir/glyph-player-$pkgver-linux-x64" id=dev.glyph.glyph_player
+
+  install -d "$pkgdir/opt/glyph-player" "$pkgdir/usr/bin" "$pkgdir/usr/share/icons"
+  cp -r "$src/." "$pkgdir/opt/glyph-player/"
+  rm -rf "$pkgdir/opt/glyph-player/linux" "$pkgdir"/opt/glyph-player/*.md
+  ln -s /opt/glyph-player/glyph_player "$pkgdir/usr/bin/glyph_player"
+
+  cp -r "$src/linux/icons/hicolor" "$pkgdir/usr/share/icons/"
+  install -Dm644 "$src/linux/$id.desktop" "$pkgdir/usr/share/applications/$id.desktop"
+}

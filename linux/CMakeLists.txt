@@ -97,6 +97,11 @@ install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 
+# App icon, used for the window icon at runtime.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor/512x512/apps/dev.glyph.glyph_player.png"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/icons" RENAME "glyph_player.png"
+  COMPONENT Runtime)
+
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 

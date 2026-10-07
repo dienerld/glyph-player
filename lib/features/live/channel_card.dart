@@ -68,7 +68,7 @@ class _ChannelCardState extends State<ChannelCard> {
                     color: _active ? Tokens.tileHi : Tokens.tile,
                     borderRadius: BorderRadius.circular(Tokens.radius),
                     border: Border.all(
-                      color: _active ? Tokens.tally : Colors.transparent,
+                      color: _active ? Tokens.accent : Colors.transparent,
                       width: 2,
                     ),
                   ),

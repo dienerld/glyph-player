@@ -20,7 +20,7 @@ class Monogram extends StatelessWidget {
       style: TextStyle(
         fontFamily: Tokens.display,
         fontSize: size,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         color: Tokens.textDim,
       ),
     );

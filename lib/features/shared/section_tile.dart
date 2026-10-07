@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../ui/theme.dart';
 
+/// A muted tint for a section, drawn only from the Glyph purple-to-wine hues
+/// (the brand's one-light rule: no other saturated colour enters the app). The
+/// hue is stable per [key], so a grid of tiles is scannable without artwork.
+Color sectionTint(String key) {
+  final h = key.codeUnits.fold<int>(7, (h, c) => h * 31 + c).abs();
+  return HSLColor.fromAHSL(1, 275 + (h % 70).toDouble(), 0.30, 0.2).toColor();
+}
+
 /// Tinted tile for a section (movie category, series distributor). The tint is
 /// a stable hue from [tintKey] so a grid of them is scannable without artwork.
 class SectionTile extends StatefulWidget {
@@ -22,15 +30,7 @@ class SectionTile extends StatefulWidget {
 class _SectionTileState extends State<SectionTile> {
   bool _active = false;
 
-  Color get _tint {
-    final hue = widget.tintKey.codeUnits.fold<int>(7, (h, c) => h * 31 + c);
-    return HSLColor.fromAHSL(
-      1,
-      (hue.abs() % 360).toDouble(),
-      0.32,
-      0.2,
-    ).toColor();
-  }
+  Color get _tint => sectionTint(widget.tintKey);
 
   @override
   Widget build(BuildContext context) => FocusableActionDetector(
@@ -53,7 +53,7 @@ class _SectionTileState extends State<SectionTile> {
           color: _tint,
           borderRadius: BorderRadius.circular(Tokens.radius),
           border: Border.all(
-            color: _active ? Tokens.tally : Colors.transparent,
+            color: _active ? Tokens.accent : Colors.transparent,
             width: 2,
           ),
         ),

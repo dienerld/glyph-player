@@ -231,7 +231,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                 : 'Favoritar',
                             icon: Icon(
                               fav ? Icons.star : Icons.star_border,
-                              color: fav ? Tokens.tally : null,
+                              color: fav ? Tokens.accent : null,
                             ),
                             onPressed: () {
                               db.setFavorite(_current.type, _current.id, !fav);
@@ -248,12 +248,12 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                               final sel = i == _index;
                               return ListTile(
                                 dense: true,
-                                tileColor: sel ? Tokens.tallyDim : null,
+                                tileColor: sel ? Tokens.accentDim : null,
                                 leading: sel
                                     ? const Icon(
                                         Icons.circle,
                                         size: 10,
-                                        color: Tokens.tally,
+                                        color: Tokens.accent,
                                       )
                                     : const SizedBox(width: 10),
                                 title: Text(

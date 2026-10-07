@@ -63,7 +63,7 @@ class _MovieCardState extends State<MovieCard> {
               color: _active ? Tokens.tileHi : Tokens.tile,
               borderRadius: BorderRadius.circular(Tokens.radius),
               border: Border.all(
-                color: _active ? Tokens.tally : Colors.transparent,
+                color: _active ? Tokens.accent : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -118,7 +118,7 @@ class _MovieCardState extends State<MovieCard> {
                         LinearProgressIndicator(
                           value: widget.progress,
                           minHeight: 3,
-                          color: Tokens.tally,
+                          color: Tokens.accent,
                           backgroundColor: Tokens.line,
                         ),
                       ],

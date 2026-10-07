@@ -3,6 +3,7 @@ import '../../data/database.dart';
 import '../../player/player_page.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
+import '../shared/card_actions.dart';
 import '../shared/monogram.dart';
 
 class ChannelCard extends StatefulWidget {
@@ -11,10 +12,14 @@ class ChannelCard extends StatefulWidget {
     required this.queue,
     required this.index,
     this.wide = false,
+    this.onRemove,
   });
   final List<Channel> queue;
   final int index;
   final bool wide;
+
+  /// When set (Recentes), the card shows an "x" that calls it.
+  final VoidCallback? onRemove;
 
   @override
   State<ChannelCard> createState() => _ChannelCardState();
@@ -67,8 +72,21 @@ class _ChannelCardState extends State<ChannelCard> {
                       width: 2,
                     ),
                   ),
-                  padding: EdgeInsets.all(widget.wide ? 20 : 14),
-                  child: Center(child: _Logo(channel: c)),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(widget.wide ? 20 : 14),
+                        child: Center(child: _Logo(channel: c)),
+                      ),
+                      CardActions(
+                        type: c.type,
+                        id: c.id,
+                        show: _active,
+                        onRemove: widget.onRemove,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(

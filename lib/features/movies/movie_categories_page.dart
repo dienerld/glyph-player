@@ -21,6 +21,7 @@ class MovieCategoriesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final groups = ref.watch(movieGroupsProvider);
     final cont = ref.watch(continueWatchingProvider).value ?? const [];
+    final favs = ref.watch(movieFavoritesProvider).value ?? const [];
     final db = ref.watch(dbProvider);
     return Scaffold(
       body: Column(
@@ -55,7 +56,24 @@ class MovieCategoriesPage extends ConsumerWidget {
                   slivers: [
                     if (cont.isNotEmpty)
                       SliverToBoxAdapter(
-                        child: _ContinueRow(items: cont, db: db),
+                        child: _MovieRow(
+                          title: 'Continuar assistindo',
+                          items: cont,
+                          db: db,
+                          withProgress: true,
+                          onRemove: (m) {
+                            db.hideContinue(m.type, m.id, DateTime.now());
+                            ref.invalidate(continueWatchingProvider);
+                          },
+                        ),
+                      ),
+                    if (favs.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: _MovieRow(
+                          title: 'Favoritos',
+                          items: favs,
+                          db: db,
+                        ),
                       ),
                     SliverPadding(
                       padding: const EdgeInsets.all(24),
@@ -91,10 +109,19 @@ class MovieCategoriesPage extends ConsumerWidget {
   }
 }
 
-class _ContinueRow extends StatelessWidget {
-  const _ContinueRow({required this.items, required this.db});
+class _MovieRow extends StatelessWidget {
+  const _MovieRow({
+    required this.title,
+    required this.items,
+    required this.db,
+    this.withProgress = false,
+    this.onRemove,
+  });
+  final String title;
   final List<Channel> items;
   final Db db;
+  final bool withProgress;
+  final void Function(Channel)? onRemove;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -102,10 +129,7 @@ class _ContinueRow extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
-        child: Text(
-          'Continuar assistindo',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        child: Text(title, style: Theme.of(context).textTheme.titleLarge),
       ),
       SizedBox(
         height: 128,
@@ -115,13 +139,19 @@ class _ContinueRow extends StatelessWidget {
           itemCount: items.length,
           separatorBuilder: (_, _) => const SizedBox(width: Tokens.gap),
           itemBuilder: (_, i) {
-            final p = db.progressOf(items[i].type, items[i].id);
+            final p = withProgress
+                ? db.progressOf(items[i].type, items[i].id)
+                : null;
             final frac = p == null || p.durationMs <= 0
                 ? null
                 : (p.positionMs / p.durationMs).clamp(0.0, 1.0);
             return SizedBox(
               width: 210,
-              child: MovieCard(movie: items[i], progress: frac),
+              child: MovieCard(
+                movie: items[i],
+                progress: frac,
+                onRemove: onRemove == null ? null : () => onRemove!(items[i]),
+              ),
             );
           },
         ),

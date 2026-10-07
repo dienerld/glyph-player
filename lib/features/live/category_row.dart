@@ -9,10 +9,14 @@ class CategoryRow extends StatelessWidget {
     required this.title,
     required this.channels,
     this.wide = false,
+    this.onRemove,
   });
   final String title;
   final List<Channel> channels;
   final bool wide;
+
+  /// Shows an "x" on each card that removes the channel from this list.
+  final void Function(Channel)? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +46,12 @@ class CategoryRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: channels.length,
             separatorBuilder: (_, _) => const SizedBox(width: Tokens.gap),
-            itemBuilder: (_, i) =>
-                ChannelCard(queue: channels, index: i, wide: wide),
+            itemBuilder: (_, i) => ChannelCard(
+              queue: channels,
+              index: i,
+              wide: wide,
+              onRemove: onRemove == null ? null : () => onRemove!(channels[i]),
+            ),
           ),
         ),
       ],

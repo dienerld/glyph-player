@@ -12,6 +12,7 @@ import '../../data/resume.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../series/auto_advance_overlay.dart';
+import '../shared/card_actions.dart';
 import '../series/next_episode_banner.dart';
 
 const _seekStep = Duration(seconds: 10);
@@ -247,6 +248,8 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
           ),
         ),
         const SizedBox(width: 8),
+        if (_item.type == 'movie')
+          FavoriteStar(type: _item.type, id: _item.id, show: true),
         Flexible(
           child: ValueListenableBuilder<int>(
             valueListenable: _cursor,

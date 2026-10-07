@@ -5,6 +5,7 @@ import '../../data/database.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
+import '../shared/card_actions.dart';
 import '../shared/monogram.dart';
 import 'series_page.dart';
 
@@ -87,13 +88,7 @@ class _SeriesCardState extends ConsumerState<SeriesCard> {
                       Positioned(
                         top: 4,
                         right: 4,
-                        child: IconButton.filledTonal(
-                          tooltip: 'Remover da lista',
-                          iconSize: 18,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.close),
-                          onPressed: _remove,
-                        ),
+                        child: RemoveFromListButton(onPressed: _remove),
                       ),
                   ],
                 ),

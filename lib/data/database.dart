@@ -69,6 +69,9 @@ CREATE TABLE IF NOT EXISTS series_favorites(
 CREATE TABLE IF NOT EXISTS series_hidden(
   grp TEXT NOT NULL, series_name TEXT NOT NULL, hidden_at INTEGER NOT NULL,
   PRIMARY KEY(grp, series_name));
+CREATE TABLE IF NOT EXISTS continue_hidden(
+  type TEXT NOT NULL, id TEXT NOT NULL, hidden_at INTEGER NOT NULL,
+  PRIMARY KEY(type, id));
 CREATE TABLE IF NOT EXISTS recents(
   type TEXT NOT NULL, id TEXT NOT NULL, watched_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
@@ -219,10 +222,10 @@ class Db {
     );
   }
 
-  List<Channel> favorites() => _channels(
+  List<Channel> favorites(String type) => _channels(
     "SELECT $_cols FROM favorites f JOIN streams s ON s.type=f.type AND s.id=f.id "
-    "WHERE s.type='live' ORDER BY s.name",
-    const [],
+    "WHERE s.type=? ORDER BY s.name COLLATE NOCASE",
+    [type],
   );
 
   List<Channel> recents({int limit = 20}) => _channels(
@@ -230,6 +233,10 @@ class Db {
     "WHERE s.type='live' ORDER BY r.watched_at DESC LIMIT ?",
     [limit],
   );
+
+  /// Drops a channel from the recents list; watching it again brings it back.
+  void removeRecent(String type, String id) =>
+      _db.execute('DELETE FROM recents WHERE type=? AND id=?', [type, id]);
 
   bool isFavorite(String type, String id) => _db.select(
     'SELECT 1 FROM favorites WHERE type=? AND id=?',
@@ -294,8 +301,18 @@ class Db {
     "SELECT $_cols FROM progress p JOIN streams s ON s.type=p.type AND s.id=p.id "
     "WHERE s.type='movie' AND p.position_ms >= 30000 "
     "AND (p.duration_ms <= 0 OR p.position_ms * 1.0 / p.duration_ms <= 0.95) "
+    "AND NOT EXISTS (SELECT 1 FROM continue_hidden h "
+    " WHERE h.type=p.type AND h.id=p.id AND h.hidden_at >= p.updated_at) "
     "ORDER BY p.updated_at DESC LIMIT ?",
     [limit],
+  );
+
+  /// Hides an item from Continue without touching its resume position; it
+  /// returns when the item is watched again.
+  void hideContinue(String type, String id, DateTime at) => _db.execute(
+    'INSERT INTO continue_hidden(type,id,hidden_at) VALUES(?,?,?) '
+    'ON CONFLICT(type,id) DO UPDATE SET hidden_at=excluded.hidden_at',
+    [type, id, at.millisecondsSinceEpoch],
   );
 
   /// Episodes of one series, ordered by season, episode, then provider order.

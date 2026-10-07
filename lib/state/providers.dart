@@ -62,14 +62,22 @@ final groupChannelsProvider = FutureProvider.family<List<Channel>, String>(
   (ref, group) async => ref.watch(dbProvider).channels('live', group),
 );
 final favoritesProvider = FutureProvider<List<Channel>>(
-  (ref) async =>
-      _visible(ref.watch(dbProvider).favorites(), ref.watch(showAdultProvider)),
+  (ref) async => _visible(
+    ref.watch(dbProvider).favorites('live'),
+    ref.watch(showAdultProvider),
+  ),
 );
 final recentsProvider = FutureProvider<List<Channel>>(
   (ref) async =>
       _visible(ref.watch(dbProvider).recents(), ref.watch(showAdultProvider)),
 );
 
+final movieFavoritesProvider = FutureProvider<List<Channel>>(
+  (ref) async => _visible(
+    ref.watch(dbProvider).favorites('movie'),
+    ref.watch(showAdultProvider),
+  ),
+);
 final movieGroupsProvider = FutureProvider<List<GroupCount>>((ref) async {
   final show = ref.watch(showAdultProvider);
   return ref
@@ -195,6 +203,7 @@ class ImportController extends Notifier<ImportState> {
         ..invalidate(continueSeriesProvider)
         ..invalidate(groupChannelsProvider)
         ..invalidate(favoritesProvider)
+        ..invalidate(movieFavoritesProvider)
         ..invalidate(recentsProvider);
     } catch (e) {
       state = ImportFailed(_describe(e));

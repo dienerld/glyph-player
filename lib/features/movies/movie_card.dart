@@ -4,15 +4,24 @@ import '../../data/database.dart';
 import '../../data/movie_title.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
+import '../shared/card_actions.dart';
 import 'vod_player_page.dart';
 
 /// Typographic card: most movies have no poster, so the title leads.
 class MovieCard extends StatefulWidget {
-  const MovieCard({super.key, required this.movie, this.progress});
+  const MovieCard({
+    super.key,
+    required this.movie,
+    this.progress,
+    this.onRemove,
+  });
   final Channel movie;
 
   /// 0..1 watched fraction, shown as a bar when set.
   final double? progress;
+
+  /// When set (Continuar assistindo), the card shows an "x" that calls it.
+  final VoidCallback? onRemove;
 
   @override
   State<MovieCard> createState() => _MovieCardState();
@@ -115,6 +124,12 @@ class _MovieCardState extends State<MovieCard> {
                       ],
                     ],
                   ),
+                ),
+                CardActions(
+                  type: m.type,
+                  id: m.id,
+                  show: _active,
+                  onRemove: widget.onRemove,
                 ),
               ],
             ),

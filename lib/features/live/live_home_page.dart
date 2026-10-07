@@ -62,6 +62,10 @@ class LiveHomePage extends ConsumerWidget {
                               title: 'Recentes',
                               channels: recents,
                               wide: true,
+                              onRemove: (c) {
+                                ref.read(dbProvider).removeRecent(c.type, c.id);
+                                ref.invalidate(recentsProvider);
+                              },
                             );
                     }
                     if (i == 1) {

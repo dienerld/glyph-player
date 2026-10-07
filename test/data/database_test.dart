@@ -70,7 +70,7 @@ void main() {
       db.markWatched('live', '2', DateTime.utc(2026, 1, 1));
       db.markWatched('live', '1', DateTime.utc(2026, 1, 2));
       load([e('1', 'A', 'G')]);
-      expect(db.favorites().map((c) => c.id), ['1']);
+      expect(db.favorites('live').map((c) => c.id), ['1']);
       expect(db.recents().map((c) => c.id), ['1']);
       db.setFavorite('live', '1', false);
       expect(db.isFavorite('live', '1'), isFalse);
@@ -146,4 +146,42 @@ void main() {
     final ep = db.episodes('Series | Netflix', 'Dark').single;
     expect((ep.season, ep.episode, ep.item.id), (2, 3, '9'));
   });
+
+  test('favorites are kept per type', () {
+    load([e('1', 'Live A', 'G'), e('2', 'Movie A', 'F', t: StreamType.movie)]);
+    db.setFavorite('live', '1', true);
+    db.setFavorite('movie', '2', true);
+    expect(db.favorites('live').map((c) => c.id), ['1']);
+    expect(db.favorites('movie').map((c) => c.id), ['2']);
+    db.setFavorite('movie', '2', false);
+    expect(db.favorites('movie'), isEmpty);
+    expect(db.favorites('live'), hasLength(1));
+  });
+
+  test(
+    'removeRecent drops a channel from recents until it is watched again',
+    () {
+      load([e('1', 'A', 'G'), e('2', 'B', 'G')]);
+      db.markWatched('live', '1', DateTime.utc(2026, 1, 1));
+      db.markWatched('live', '2', DateTime.utc(2026, 1, 2));
+      db.removeRecent('live', '2');
+      expect(db.recents().map((c) => c.id), ['1']);
+      db.markWatched('live', '2', DateTime.utc(2026, 1, 3));
+      expect(db.recents().map((c) => c.id), ['2', '1']);
+    },
+  );
+
+  test(
+    'a movie hidden from Continue returns only after new watching, keeping its progress',
+    () {
+      load([e('1', 'M', 'F', t: StreamType.movie)]);
+      db.saveProgress('movie', '1', 600000, 7200000, DateTime.utc(2026, 1, 3));
+      expect(db.continueWatching().map((c) => c.id), ['1']);
+      db.hideContinue('movie', '1', DateTime.utc(2026, 1, 4));
+      expect(db.continueWatching(), isEmpty);
+      expect(db.progressOf('movie', '1')!.positionMs, 600000);
+      db.saveProgress('movie', '1', 900000, 7200000, DateTime.utc(2026, 1, 5));
+      expect(db.continueWatching().map((c) => c.id), ['1']);
+    },
+  );
 }

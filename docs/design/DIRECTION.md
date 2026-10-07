@@ -37,7 +37,7 @@ Both bundled as assets (no runtime network).
 - **Progress during import:** 2 px accent line under the top bar + text in Configurações; UI stays interactive.
 
 ## Player
-Full-bleed video. Channel panel slides in from the right (320 px, panel at 94% opacity, solid, no blur), 220 ms exponential ease-out (cubic-bezier 0.16, 1, 0.3, 1). Current channel = tallyDim row with a live dot. ↑/↓ zap, L toggles panel, Esc back, star toggles favourite. Controls auto-hide after 2.5 s without mouse movement.
+Full-bleed video. Channel panel slides in from the right (320 px, panel at 94% opacity, solid, no blur), 220 ms exponential ease-out (cubic-bezier 0.16, 1, 0.3, 1). Current channel = accentDim row with a dot. ↑/↓ zap, L toggles panel, Esc back, star toggles favourite. Controls auto-hide after 2.5 s without mouse movement.
 
 ## Motion
 One authored moment: the player panel slide. Everything else is 120 ms hover feedback. Respect reduced motion (skip scale and slide, cross-fade only).

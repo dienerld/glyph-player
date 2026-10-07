@@ -4,11 +4,17 @@
 # this .desktop entry (the window icon alone is not enough there).
 #
 # Usage: linux/install_desktop.sh [path/to/bundle]
-#   default bundle: build/linux/x64/release/bundle
+#   default: the unpacked release folder, else build/linux/x64/release/bundle
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-bundle="$(realpath "${1:-$root/build/linux/x64/release/bundle}")"
+if [ -n "${1:-}" ]; then
+  bundle="$(realpath "$1")"
+elif [ -x "$root/glyph_player" ]; then
+  bundle="$root"                               # unpacked release archive
+else
+  bundle="$(realpath "$root/build/linux/x64/release/bundle")"  # source checkout
+fi
 [ -x "$bundle/glyph_player" ] || { echo "no glyph_player binary in $bundle (run: flutter build linux)" >&2; exit 1; }
 
 share="${XDG_DATA_HOME:-$HOME/.local/share}"

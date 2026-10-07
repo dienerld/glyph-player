@@ -1,0 +1,155 @@
+name: Build and release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch: # builds the archives without publishing a release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: "3.41.2"
+
+jobs:
+  check:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag matches the pubspec version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pub="$(sed -n 's/^version: \([0-9][0-9.]*\)+.*/\1/p' pubspec.yaml)"
+          if [ "$tag" != "$pub" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match pubspec version $pub"
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  build-linux:
+    name: Build Linux
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev libmpv-dev libsecret-1-dev libjsoncpp-dev
+
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - name: Package
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then ver="${GITHUB_REF_NAME#v}"; else ver="dev-${GITHUB_SHA::7}"; fi
+          name="glyph-player-${ver}-linux-x64"
+          mkdir -p "dist/$name/linux"
+          cp -r build/linux/x64/release/bundle/. "dist/$name/"
+          cp -r linux/icons linux/dev.glyph.glyph_player.desktop linux/install_desktop.sh "dist/$name/linux/"
+          cp README.md CHANGELOG.md "dist/$name/"
+          tar -C dist -czf "$name.tar.gz" "$name"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: "*.tar.gz"
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows
+    needs: check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $ver = $env:GITHUB_REF_NAME.TrimStart('v') }
+          else { $ver = "dev-" + $env:GITHUB_SHA.Substring(0, 7) }
+          $name = "glyph-player-$ver-windows-x64"
+          New-Item -ItemType Directory -Path "dist/$name" | Out-Null
+          Copy-Item -Recurse -Path build/windows/x64/runner/Release/* -Destination "dist/$name"
+          Copy-Item README.md, CHANGELOG.md -Destination "dist/$name"
+          Compress-Archive -Path "dist/$name" -DestinationPath "$name.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: "*.zip"
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and upload the archives
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Release notes from the changelog
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          awk -v v="$ver" '$0 ~ "^## " v "( |$)" {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $ver"
+            exit 1
+          fi
+          cat >> notes.md <<'EOF'
+
+          ## Instalação
+
+          - **Linux:** extraia o `.tar.gz` e rode `./glyph_player`. Precisa de `libmpv` (no Arch, o pacote `mpv`) e `libsecret`. Para ter ícone e atalho no menu: `./linux/install_desktop.sh`.
+          - **Windows:** extraia o `.zip` e rode `glyph_player.exe`.
+
+          Na primeira abertura, vá em Configurações e cole a URL da sua lista M3U_plus.
+          EOF
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Glyph Player ${{ github.ref_name }}
+          body_path: notes.md
+          files: dist/*
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

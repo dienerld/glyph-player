@@ -45,6 +45,19 @@ flutter build windows --release
 
 O `install_desktop.sh` é o que faz o desktop Linux (principalmente no Wayland) mostrar o nome e o ícone do app na barra de tarefas.
 
+## Releases
+
+Cada tag `vX.Y.Z` dispara o workflow `.github/workflows/release.yml`: analisa, testa, gera os pacotes de Linux (`.tar.gz`) e Windows (`.zip`) e publica tudo numa release do GitHub, com as notas tiradas do `CHANGELOG.md`. A versão da tag precisa ser igual à do `pubspec.yaml`.
+
+```bash
+# 1. suba a versão em pubspec.yaml e acrescente a seção "## X.Y.Z" no CHANGELOG.md
+# 2. depois do commit na main:
+git tag -a vX.Y.Z -m "Glyph Player X.Y.Z"
+git push origin main vX.Y.Z
+```
+
+Pelo botão "Run workflow" do GitHub (`workflow_dispatch`) dá para gerar os pacotes sem publicar release.
+
 ## Testes
 
 ```bash

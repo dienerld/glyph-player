@@ -47,12 +47,12 @@
   };
   const sorted = (g) => [...g.ch].sort(naturalCompare);
 
-  function card(g, name, wide) {
+  function card(g, name, wide, from = 'library') {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'card' + (wide ? ' wide' : '');
     b.innerHTML = `<span class="tile">${wide ? '<span class="live">AO VIVO</span>' : ''}<span class="mono">${initials(name)}</span></span><span class="name">${name}</span>`;
-    b.addEventListener('click', () => openChannel(g, name));
+    b.addEventListener('click', () => openChannel(g, name, from));
     return b;
   }
   function row(title, count, items, wide) {
@@ -77,7 +77,7 @@
         c.className = 'cat';
         c.style.setProperty('--h', g.hue);
         c.innerHTML = `<b>${g.name}</b><small>${g.count} canais</small>`;
-        c.addEventListener('click', () => openChannel(g, sorted(g)[0]));
+        c.addEventListener('click', () => openGroup(g));
         grid.append(c);
       });
       body.append(grid);
@@ -114,7 +114,25 @@
     toggle.setAttribute('aria-expanded', String(open));
     panel.inert = !open;
   }
-  function openChannel(g, name) {
+  // Categorias -> the category's channels -> the player, as in the app.
+  function openGroup(g) {
+    group = g;
+    $('[data-grp-title]').textContent = g.name;
+    const grid = document.createElement('div');
+    grid.className = 'grp-grid';
+    sorted(g).forEach((n) => grid.append(card(g, n, false, 'group')));
+    const gb = $('[data-grp-body]');
+    gb.textContent = '';
+    gb.append(grid);
+    gb.scrollTop = 0;
+    app.dataset.view = 'group';
+    $('[data-grp-back]').focus({ preventScroll: true });
+  }
+  $('[data-grp-back]').addEventListener('click', () => { app.dataset.view = 'library'; });
+  $('.grp').addEventListener('keydown', (e) => { if (e.key === 'Escape') app.dataset.view = 'library'; });
+
+  function openChannel(g, name, from = 'library') {
+    origin = from;
     group = g;
     queue = sorted(g);
     index = queue.indexOf(name);
@@ -132,7 +150,7 @@
   }
   function closePlayer() {
     setOpen(false);
-    app.dataset.view = 'library';
+    app.dataset.view = origin;
   }
 
   $('[data-edge]', play).addEventListener('mouseenter', () => { edgeTimer = setTimeout(() => setOpen(true), EDGE_DELAY); });

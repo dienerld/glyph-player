@@ -21,7 +21,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 24px; }
-body { margin: 0; background: var(--ink); color: var(--text); font: 400 1.0625rem/1.7 "Manrope", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; background: var(--ink); color: var(--text); font: 400 1.0625rem/1.7 "Manrope", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; }
 p { margin: 0; }
@@ -33,7 +33,7 @@ button { font: inherit; color: inherit; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: var(--ink); padding: 8px 14px; border-radius: 8px; z-index: 50; }
 .skip:focus { left: 8px; }
 
-h1, h2, h3, h4 { font-family: "Fraunces", Georgia, serif; font-weight: 500; color: var(--strong); margin: 0; letter-spacing: -0.02em; }
+h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 500; color: var(--strong); margin: 0; letter-spacing: -0.02em; }
 h1 { font-size: clamp(2.9rem, 8.2vw, 6.4rem); line-height: 0.98; max-width: 13ch; letter-spacing: -0.035em; }
 h2 { font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.08; max-width: 20ch; }
 h3 { font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.01em; }
@@ -67,7 +67,7 @@ h3 { font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.01em; }
 
 /* The app demo: everything inside scales from one unit (1em = window width / 80). */
 .appwrap { container-type: inline-size; }
-.app { position: relative; display: grid; grid-template-columns: 5.2em 1fr; aspect-ratio: 16 / 10; font-size: 1.25cqw; background: var(--ink); border: 1px solid var(--line); border-radius: 1.1em; overflow: hidden; overflow: clip; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(192, 132, 252, 0.06), 0 0 120px -30px rgba(147, 51, 234, 0.45); }
+.app { position: relative; display: grid; grid-template-columns: 5.2em 1fr; aspect-ratio: 16 / 10; font-size: 1.25cqw; background: var(--ink); border: 1px solid var(--line); border-radius: 1.1em; overflow: hidden; overflow: clip; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.75); }
 .rail { display: flex; flex-direction: column; align-items: center; gap: 1.1em; padding: 1.6em 0; background: var(--panel); border-right: 1px solid rgba(69, 63, 78, 0.6); }
 .rail img { width: 2em; height: auto; margin-bottom: 0.9em; }
 .rail span { position: relative; width: 3em; height: 3em; display: grid; place-items: center; color: var(--dim); border-radius: 0.8em; }
@@ -198,7 +198,7 @@ kbd { display: inline-block; min-width: 1.9em; padding: 0.05em 0.5em; text-align
 .keycap-osd b { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(3.4rem, 7vw, 5.2rem); line-height: 1; color: var(--strong); font-variant-numeric: tabular-nums; }
 .keycap-osd span { font-size: 1.4rem; font-weight: 600; color: var(--strong); }
 .keycap-grid { display: grid; grid-template-columns: repeat(3, 5.4rem); gap: 12px; }
-.key { appearance: none; height: 5.4rem; border-radius: 14px; border: 1px solid var(--line); border-bottom-width: 5px; background: var(--panel); color: var(--strong); font: 500 2rem "Fraunces", serif; cursor: pointer; transition: transform 90ms, border-bottom-width 90ms, background 120ms; }
+.key { appearance: none; height: 5.4rem; border-radius: 14px; border: 1px solid var(--line); border-bottom-width: 5px; background: var(--panel); color: var(--strong); font: 500 2rem "Fraunces", serif; cursor: pointer; transition: transform 90ms, background 120ms; }
 .key:hover { background: var(--line); }
 .key:active, .key.pressed { transform: translateY(3px); border-bottom-width: 2px; }
 .key[aria-pressed="true"] { background: var(--accent-dim); border-color: var(--accent); }
@@ -255,7 +255,7 @@ kbd { display: inline-block; min-width: 1.9em; padding: 0.05em 0.5em; text-align
 .upd-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; background: var(--accent-dim); padding: 12px 18px; font-size: 0.95rem; color: var(--strong); }
 .upd-actions { display: flex; gap: 8px; }
 .upd-body { padding: 22px; }
-.upd-body h4 { font-size: 1.35rem; margin-bottom: 14px; }
+.upd-title { font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; color: var(--strong); margin-bottom: 14px !important; }
 .upd-bar { display: block; width: 130px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .upd-bar i { display: block; height: 100%; width: 0; background: var(--accent); }
 

@@ -60,7 +60,7 @@ Na primeira abertura, vá em **Configurações**, cole a URL da sua lista M3U_pl
 | Filmes, séries e vídeos no Ao vivo | ← / → | voltar / avançar 10 s |
 | Filmes e séries | ↑ / ↓ | volume |
 | Séries | `P` / `N` | episódio anterior / próximo |
-| Todos | espaço, `M`, `Esc` | pausar, mudo, voltar |
+| Todos | espaço, `M`, `F`, `Esc` | pausar, mudo, tela cheia, voltar |
 
 ## Build
 

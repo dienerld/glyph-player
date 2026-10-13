@@ -40,6 +40,7 @@ class VodPlayerPage extends ConsumerStatefulWidget {
 class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   final Player _player = Player();
   late final VideoController _video = VideoController(_player);
+  final _videoKey = GlobalKey<VideoState>();
   late final Db _db = ref.read(dbProvider);
   late int _index = widget.index;
   late final ValueNotifier<int> _cursor = ValueNotifier(widget.index);
@@ -224,6 +225,8 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
             _player.setVolume((_player.state.volume + 5).clamp(0, 100)),
         const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
             _player.setVolume((_player.state.volume - 5).clamp(0, 100)),
+        const SingleActivator(LogicalKeyboardKey.keyF): () =>
+            _videoKey.currentState?.toggleFullscreen(),
         const SingleActivator(LogicalKeyboardKey.keyM): () =>
             _player.setVolume(_player.state.volume == 0 ? 100 : 0),
         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -302,6 +305,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
                 normal: _controls(),
                 fullscreen: _controls(),
                 child: Video(
+                  key: _videoKey,
                   controller: _video,
                   controls: MaterialDesktopVideoControls,
                 ),

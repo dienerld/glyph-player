@@ -31,6 +31,7 @@ class PlayerPage extends ConsumerStatefulWidget {
 class _PlayerPageState extends ConsumerState<PlayerPage> {
   late final Player _player = Player();
   late final VideoController _video = VideoController(_player);
+  final _videoKey = GlobalKey<VideoState>();
   late int _index = widget.index;
   bool _panel = false;
   bool _chrome = true; // back button, shown while the mouse is active
@@ -99,6 +100,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     super.dispose();
   }
 
+  void _toggleFullscreen() => _videoKey.currentState?.toggleFullscreen();
+
   void _seekBy(Duration delta) {
     final target = _player.state.position + delta;
     _player.seek(target < Duration.zero ? Duration.zero : target);
@@ -138,6 +141,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         const SingleActivator(LogicalKeyboardKey.arrowDown): () => _zap(1),
         const SingleActivator(LogicalKeyboardKey.keyM): () =>
             _player.setVolume(_player.state.volume == 0 ? 100 : 0),
+        const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
         if (_seekable) ...{
@@ -174,6 +178,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowUp): () => _zap(-1),
         const SingleActivator(LogicalKeyboardKey.arrowDown): () => _zap(1),
+        const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.keyL): () =>
             setState(() => _panel = !_panel),
         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -198,6 +203,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     normal: _controls(fullscreen: false),
                     fullscreen: _controls(fullscreen: true),
                     child: Video(
+                      key: _videoKey,
                       controller: _video,
                       controls: MaterialDesktopVideoControls,
                     ),

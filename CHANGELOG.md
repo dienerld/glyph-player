@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 - 2026-10-13
+
+- **Tela cheia com `F`:** a tecla `F` entra e sai da tela cheia no Ao vivo e em filmes e séries, igual ao botão.
+
 ## 0.4.0 - 2026-10-13
 
 Atualização automática.

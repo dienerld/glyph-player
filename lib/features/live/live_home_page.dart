@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/database.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../settings/settings_page.dart';
+import '../shared/section_tile.dart';
 import 'category_row.dart';
+import 'live_group_page.dart';
 import 'search_delegate.dart';
 
 class LiveHomePage extends ConsumerWidget {
@@ -14,6 +17,7 @@ class LiveHomePage extends ConsumerWidget {
     final groups = ref.watch(liveGroupsProvider);
     final recents = ref.watch(recentsProvider).value ?? const [];
     final favorites = ref.watch(favoritesProvider).value ?? const [];
+    final view = ref.watch(liveViewProvider);
     final importing = ref.watch(importControllerProvider) is ImportRunning;
 
     return Scaffold(
@@ -28,6 +32,25 @@ class LiveHomePage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const Spacer(),
+                SegmentedButton<LiveView>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: LiveView.rows,
+                      icon: Icon(Icons.view_agenda_outlined),
+                      label: Text('Linhas'),
+                    ),
+                    ButtonSegment(
+                      value: LiveView.categories,
+                      icon: Icon(Icons.grid_view),
+                      label: Text('Categorias'),
+                    ),
+                  ],
+                  selected: {view},
+                  onSelectionChanged: (s) =>
+                      ref.read(liveViewProvider.notifier).set(s.first),
+                ),
+                const SizedBox(width: 8),
                 IconButton(
                   tooltip: 'Buscar',
                   icon: const Icon(Icons.search),
@@ -51,6 +74,7 @@ class LiveHomePage extends ConsumerWidget {
               error: (e, _) => Center(child: Text('Erro: $e')),
               data: (g) {
                 if (g.isEmpty) return const _EmptyState();
+                if (view == LiveView.categories) return _Categories(g);
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: 32),
                   itemCount: g.length + 2,
@@ -76,7 +100,7 @@ class LiveHomePage extends ConsumerWidget {
                               channels: favorites,
                             );
                     }
-                    final group = g[i - 2];
+                    final group = g[i - 2].name;
                     final ch =
                         ref.watch(groupChannelsProvider(group)).value ??
                         const [];
@@ -90,6 +114,31 @@ class LiveHomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _Categories extends StatelessWidget {
+  const _Categories(this.groups);
+  final List<GroupCount> groups;
+
+  @override
+  Widget build(BuildContext context) => GridView.builder(
+    padding: const EdgeInsets.all(24),
+    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: 240,
+      mainAxisExtent: 104,
+      crossAxisSpacing: Tokens.gap,
+      mainAxisSpacing: Tokens.gap,
+    ),
+    itemCount: groups.length,
+    itemBuilder: (_, i) => SectionTile(
+      label: groups[i].name,
+      countText: '${groups[i].count} canais',
+      tintKey: groups[i].name,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => LiveGroupPage(group: groups[i].name)),
+      ),
+    ),
+  );
 }
 
 class _EmptyState extends StatelessWidget {

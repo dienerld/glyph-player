@@ -242,28 +242,10 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                         ),
                         const Divider(height: 1, color: Tokens.line),
                         Expanded(
-                          child: ListView.builder(
-                            itemCount: widget.queue.length,
-                            itemBuilder: (_, i) {
-                              final sel = i == _index;
-                              return ListTile(
-                                dense: true,
-                                tileColor: sel ? Tokens.accentDim : null,
-                                leading: sel
-                                    ? const Icon(
-                                        Icons.circle,
-                                        size: 10,
-                                        color: Tokens.accent,
-                                      )
-                                    : const SizedBox(width: 10),
-                                title: Text(
-                                  widget.queue[i].name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                onTap: () => _zap(i - _index),
-                              );
-                            },
+                          child: QueueList(
+                            queue: widget.queue,
+                            index: _index,
+                            onSelect: (i) => _zap(i - _index),
                           ),
                         ),
                       ],
@@ -277,4 +259,84 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       ),
     );
   }
+}
+
+/// The channel list beside the video. It opens centred on the playing channel
+/// and follows it as the channel changes.
+class QueueList extends StatefulWidget {
+  const QueueList({
+    super.key,
+    required this.queue,
+    required this.index,
+    required this.onSelect,
+  });
+  final List<Channel> queue;
+  final int index;
+  final void Function(int) onSelect;
+
+  @override
+  State<QueueList> createState() => _QueueListState();
+}
+
+class _QueueListState extends State<QueueList> {
+  static const _extent = 48.0;
+  ScrollController? _scroll;
+
+  double _centred(double viewport) =>
+      (widget.index * _extent - (viewport - _extent) / 2).clamp(
+        0,
+        (widget.queue.length * _extent - viewport).clamp(0, double.infinity),
+      );
+
+  @override
+  void didUpdateWidget(QueueList old) {
+    super.didUpdateWidget(old);
+    final c = _scroll;
+    if (old.index == widget.index || c == null || !c.hasClients) return;
+    final top = widget.index * _extent;
+    final viewport = c.position.viewportDimension;
+    if (top < c.offset || top + _extent > c.offset + viewport) {
+      c.animateTo(
+        _centred(viewport),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (_, box) {
+      _scroll ??= ScrollController(
+        initialScrollOffset: _centred(box.maxHeight),
+      );
+      return ListView.builder(
+        controller: _scroll,
+        itemExtent: _extent,
+        itemCount: widget.queue.length,
+        itemBuilder: (_, i) {
+          final sel = i == widget.index;
+          return ListTile(
+            dense: true,
+            tileColor: sel ? Tokens.accentDim : null,
+            leading: sel
+                ? const Icon(Icons.circle, size: 10, color: Tokens.accent)
+                : const SizedBox(width: 10),
+            title: Text(
+              widget.queue[i].name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () => widget.onSelect(i),
+          );
+        },
+      );
+    },
+  );
 }

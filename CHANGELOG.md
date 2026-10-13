@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 - 2026-10-13
+
+Ao vivo mais fácil de navegar.
+
+- **Ao vivo:** seletor **Linhas | Categorias** (a escolha fica salva). Em Categorias, você escolhe a categoria/emissora primeiro e só então vê os canais.
+- **Ordem dos canais:** ordem natural pelo nome (10, 11, 20, 100 em vez de 10, 100, 101, 20).
+- **Mouse:** as linhas horizontais agora rolam arrastando com o mouse, não só no touchpad.
+- **Player:** a lista lateral abre centralizada no canal que está tocando e acompanha a troca de canal.
+
 ## 0.2.0 - 2026-10-07
 
 Instaladores.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 - 2026-10-13
+
+Atualização automática.
+
+- **Atualização automática:** ao abrir, o app verifica se há versão nova e mostra um aviso com **Atualizar e reiniciar**. Em **Configurações → Atualizações** você vê a versão atual e verifica na hora.
+  - Instalado na sua pasta (script do Linux ou `.tar.gz` extraído): baixa, troca os arquivos e reabre.
+  - Windows instalado pelo `setup.exe`: baixa e executa o instalador em modo silencioso.
+  - `.deb`, Arch e `.zip` portátil: o botão abre a página da release.
+- **Linux:** `linux/install.sh` instala na pasta do usuário, sem `sudo`, para o app poder se atualizar.
+- **Player:** a lista de canais lateral só abre quando o mouse fica 300 ms na borda direita, sem cobrir o botão de tela cheia.
+- **Recentes:** guarda só os 20 últimos canais; remover um não traz de volta os mais antigos.
+
 ## 0.3.0 - 2026-10-13
 
 Ao vivo mais fácil de navegar.

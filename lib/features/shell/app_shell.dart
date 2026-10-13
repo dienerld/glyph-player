@@ -5,6 +5,7 @@ import '../live/live_home_page.dart';
 import '../movies/movie_categories_page.dart';
 import '../series/series_home_page.dart';
 import '../settings/settings_page.dart';
+import 'update_prompt.dart';
 
 enum _Tab { live, movies, series }
 
@@ -20,15 +21,22 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Row(
+    body: Column(
       children: [
-        _Rail(tab: _tab, onSelect: (t) => setState(() => _tab = t)),
+        const UpdatePrompt(dismissible: true),
         Expanded(
-          child: switch (_tab) {
-            _Tab.live => const LiveHomePage(),
-            _Tab.movies => const MovieCategoriesPage(),
-            _Tab.series => const SeriesHomePage(),
-          },
+          child: Row(
+            children: [
+              _Rail(tab: _tab, onSelect: (t) => setState(() => _tab = t)),
+              Expanded(
+                child: switch (_tab) {
+                  _Tab.live => const LiveHomePage(),
+                  _Tab.movies => const MovieCategoriesPage(),
+                  _Tab.series => const SeriesHomePage(),
+                },
+              ),
+            ],
+          ),
         ),
       ],
     ),

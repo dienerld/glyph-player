@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
+import '../shell/update_prompt.dart';
 
 void openSettings(BuildContext context) => Navigator.of(
   context,
@@ -78,6 +79,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   value: ref.watch(showAdultProvider),
                   onChanged: (v) => ref.read(showAdultProvider.notifier).set(v),
                 ),
+                const SizedBox(height: 24),
+                Text(
+                  'Atualizações',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(switch (ref.watch(availableUpdateProvider)) {
+                        AsyncLoading() => 'Verificando…',
+                        AsyncData(value: final u?) =>
+                          'Versão ${u.version} disponível',
+                        _ =>
+                          'Versão ${ref.watch(appVersionProvider).value ?? ''} · você está na mais recente',
+                      }, style: const TextStyle(color: Tokens.textDim)),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => ref.invalidate(availableUpdateProvider),
+                      child: const Text('Verificar agora'),
+                    ),
+                  ],
+                ),
+                const UpdatePrompt(dismissible: false),
                 const SizedBox(height: 16),
                 switch (s) {
                   ImportRunning(:final downloading, :final count) => Text(

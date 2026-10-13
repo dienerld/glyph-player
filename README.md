@@ -1,6 +1,6 @@
 # Glyph Player
 
-Player de IPTV para desktop (Linux e Windows) que lê a **sua própria lista M3U_plus**, mesmo com 50 MB ou mais, sem travar quando a lista é atualizada. Um produto da Glyph.
+Player de IPTV para desktop (Linux e Windows) que lê a **sua própria lista M3U_plus**, mesmo com 50 MB ou mais, sem travar quando a lista é atualizada. Um produto da Glyph. Página do produto: https://dienerld.github.io/glyph-player/
 
 Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se conecta ao que a sua lista aponta (a própria lista, as miniaturas e os streams) e ao GitHub, para verificar se há versão nova.
 

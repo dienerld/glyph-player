@@ -2,7 +2,7 @@
 # Usage: cd linux/arch && makepkg -si
 # Bump pkgver to the release you want; the archive comes from GitHub Releases.
 pkgname=glyph-player
-pkgver=0.4.0
+pkgver=0.4.1
 pkgrel=1
 pkgdesc='IPTV player for your own M3U playlist'
 arch=('x86_64')

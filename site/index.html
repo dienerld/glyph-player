@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glyph Player: seu player de IPTV para Linux e Windows</title>
+  <meta name="description" content="Player de IPTV para desktop que lê a sua própria lista M3U_plus, mesmo com 50 MB ou mais, sem travar. Troca de canal em duas teclas e tudo fica no seu computador.">
+  <meta name="theme-color" content="#17131C">
+  <meta property="og:title" content="Glyph Player">
+  <meta property="og:description" content="Sua lista de canais, sem travar. Player de IPTV para Linux e Windows.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/Fraunces.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Manrope.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+
+  <header class="top">
+    <a class="brand" href="./" aria-label="Glyph Player, início">
+      <img src="gem.svg" alt="" width="28" height="29">
+      <span>Glyph Player</span>
+    </a>
+    <nav aria-label="Principal">
+      <a href="#recursos">Recursos</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="https://github.com/dienerld/glyph-player">GitHub</a>
+      <a class="btn small primary" href="#instalar">Instalar</a>
+    </nav>
+  </header>
+
+  <main id="conteudo">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="wrap">
+        <h1>Sua lista de canais, sem travar.</h1>
+        <p class="lead">O Glyph Player abre listas M3U_plus de 50&nbsp;MB ou mais, troca de canal em duas teclas e guarda tudo no seu computador.</p>
+        <p class="actions">
+          <a class="btn primary big" href="#instalar">Instalar</a>
+          <a class="btn big" href="https://github.com/dienerld/glyph-player">Ver no GitHub</a>
+        </p>
+        <p class="version" data-version>Para Linux e Windows</p>
+      </div>
+
+      <div class="wrap demo">
+        <div class="appwrap">
+          <div class="app" id="app" data-mode="rows" data-view="library">
+            <nav class="rail" aria-hidden="true">
+              <img src="gem.svg" alt="" width="22" height="23">
+              <span class="on"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+              <span><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8h16M4 16h16M9 3v18"/></svg></span>
+              <span><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+              <i></i>
+              <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></span>
+            </nav>
+
+            <div class="stage">
+              <section class="lib" aria-label="Biblioteca de canais">
+                <header class="lib-head">
+                  <h2>Ao vivo</h2>
+                  <div class="seg" role="group" aria-label="Modo de exibição">
+                    <button type="button" data-mode-btn="rows" aria-pressed="true">Linhas</button>
+                    <button type="button" data-mode-btn="cats" aria-pressed="false">Categorias</button>
+                  </div>
+                </header>
+                <div class="progress" aria-hidden="true"><span></span></div>
+                <div class="lib-body" data-lib-body></div>
+              </section>
+
+              <section class="play" id="play" tabindex="0" aria-label="Player. Use as setas para cima e para baixo para trocar de canal, L para abrir a lista e Esc para voltar.">
+                <div class="screen">
+                  <div class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                  <div class="osd" aria-live="polite">
+                    <span class="osd-num" data-osd-num>10</span>
+                    <span class="osd-name" data-osd-name>Aurora</span>
+                  </div>
+                  <button class="back" type="button" data-back aria-label="Voltar para a biblioteca">
+                    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+                  </button>
+                  <div class="controls">
+                    <button type="button" data-zap="-1" aria-label="Canal anterior"><svg viewBox="0 0 24 24"><path d="M7 5v14M18 5l-9 7 9 7z"/></svg></button>
+                    <button type="button" aria-label="Pausar" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+                    <button type="button" data-zap="1" aria-label="Próximo canal"><svg viewBox="0 0 24 24"><path d="M17 5v14M6 5l9 7-9 7z"/></svg></button>
+                    <span class="grow"></span>
+                    <button type="button" data-toggle aria-expanded="false" aria-controls="lista" aria-label="Lista de canais"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+                    <button type="button" aria-label="Tela cheia" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+                  </div>
+                  <div class="edge" data-edge aria-hidden="true"></div>
+                  <aside class="panel" id="lista" aria-label="Lista de canais" inert>
+                    <div class="panel-head"><strong data-panel-name>Aurora</strong><span data-panel-group>Notícias</span></div>
+                    <ul data-list></ul>
+                  </aside>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+        <p class="hint" data-hint>É uma demonstração: clique num canal. No player, segure o mouse na borda direita para abrir a lista, ou use <kbd>↑</kbd> <kbd>↓</kbd> e <kbd>L</kbd>. <kbd>Esc</kbd> volta.</p>
+      </div>
+    </section>
+
+    <!-- Lista grande -->
+    <section class="band" id="recursos">
+      <div class="wrap split">
+        <div>
+          <h2>Uma lista de 220 mil itens e a tela continua livre</h2>
+          <p>Atualizar a lista não trava a interface. O download e a leitura rodam em segundo plano e gravam num banco local com busca, então você segue navegando e assistindo enquanto isso.</p>
+          <p class="dim">No desenvolvimento usamos uma lista real de mais de 50&nbsp;MB, com cerca de 220 mil itens, dos quais 3,3 mil são canais ao vivo.</p>
+        </div>
+        <div class="visual">
+          <div class="mini import" data-import>
+            <div class="mini-bar"><span>Ao vivo</span><button type="button" data-import-run>Atualizar lista</button></div>
+            <div class="progress" aria-hidden="true"><span data-import-line></span></div>
+            <p class="import-status" data-import-status aria-live="polite">Lista atualizada. 3.312 canais ao vivo.</p>
+            <div class="chips">
+              <span>Aurora</span><span>Meridiano</span><span>Farol</span><span>Pacífico</span><span>Estação Norte</span><span>Arena 1</span><span>Arena 2</span><span>Arena 10</span>
+            </div>
+            <p class="import-note">Os canais continuam clicáveis enquanto a lista atualiza.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Zapping -->
+    <section class="section">
+      <div class="wrap split flip">
+        <div class="visual">
+          <div class="keycaps" data-keys>
+            <div class="keycap-osd" aria-live="polite"><b data-key-num>11</b><span data-key-name>Meridiano</span></div>
+            <div class="keycap-grid">
+              <button type="button" class="key up" data-key="-1" aria-label="Canal anterior">↑</button>
+              <button type="button" class="key down" data-key="1" aria-label="Próximo canal">↓</button>
+              <button type="button" class="key wide" data-key-list aria-pressed="false">L</button>
+            </div>
+            <div class="keycap-list" data-key-listbox hidden>
+              <span>10 Aurora</span><span>11 Meridiano</span><span>12 Farol</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2>Trocar de canal em duas teclas</h2>
+          <p>Zapear é o que você mais faz, então é o que o app faz mais rápido. As setas passam para o canal anterior e o seguinte da categoria, e a lista lateral abre já centralizada no canal que está tocando.</p>
+          <dl class="keys">
+            <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Canal anterior e seguinte</dd></div>
+            <div><dt><kbd>L</kbd></dt><dd>Abre e fecha a lista de canais</dd></div>
+            <div><dt><kbd>Espaço</kbd></dt><dd>Pausa e continua</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Volta e avança 10 s, em entradas que são vídeos</dd></div>
+            <div><dt><kbd>M</kbd></dt><dd>Liga e desliga o som</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ao vivo, filmes, séries -->
+    <section class="band">
+      <div class="wrap">
+        <h2 class="center-head">Ao vivo, filmes e séries</h2>
+        <div class="tabs" role="tablist" aria-label="Seções do app">
+          <button role="tab" id="t-live" aria-selected="true" aria-controls="p-live" type="button">Ao vivo</button>
+          <button role="tab" id="t-movies" aria-selected="false" aria-controls="p-movies" type="button" tabindex="-1">Filmes</button>
+          <button role="tab" id="t-series" aria-selected="false" aria-controls="p-series" type="button" tabindex="-1">Séries</button>
+        </div>
+
+        <div class="tabpanel split" role="tabpanel" id="p-live" aria-labelledby="t-live">
+          <div>
+            <h3>Canais do seu jeito</h3>
+            <p>Categorias, busca, recentes e favoritos. Escolha ver uma linha por categoria ou entrar primeiro na categoria e só então ver os canais.</p>
+            <p>Os canais saem em ordem natural, como você leria: 9, 10, 11, 20, 100.</p>
+          </div>
+          <div class="mini">
+            <div class="mini-bar"><span>Esportes</span><span class="dim">5 canais</span></div>
+            <div class="chips big"><span>Arena 1</span><span>Arena 2</span><span>Arena 10</span><span>Arena 11</span><span>Arena 100</span></div>
+          </div>
+        </div>
+
+        <div class="tabpanel split" role="tabpanel" id="p-movies" aria-labelledby="t-movies" hidden>
+          <div>
+            <h3>Filmes por gênero</h3>
+            <p>Uma grade de gêneros, e dentro dela título, ano e etiquetas como 4K. Favoritos, busca e "Continuar assistindo", que retoma de onde você parou.</p>
+          </div>
+          <div class="mini">
+            <div class="mini-bar"><span>Continuar assistindo</span></div>
+            <div class="posters">
+              <div style="--h:285"><b>Noite Azul</b><small>2021</small><i style="--p:62%"></i></div>
+              <div style="--h:315"><b>O Farol</b><small>2019</small><i style="--p:18%"></i></div>
+              <div style="--h:335"><b>Verão em Lisboa</b><small>2023</small><i style="--p:85%"></i></div>
+            </div>
+            <div class="tiles">
+              <span style="--h:290">Ação<small>148 filmes</small></span>
+              <span style="--h:310">Drama<small>212 filmes</small></span>
+              <span style="--h:330">Comédia<small>97 filmes</small></span>
+              <span style="--h:300">Ficção<small>64 filmes</small></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel split" role="tabpanel" id="p-series" aria-labelledby="t-series" hidden>
+          <div>
+            <h3>Séries do começo ao fim</h3>
+            <p>Agrupadas por distribuidora e depois série, temporada e episódio. Episódio anterior e próximo, e o próximo começa sozinho no último minuto.</p>
+          </div>
+          <div class="mini">
+            <div class="mini-bar"><span>Cidade Baixa</span><span class="dim">3 temporadas</span></div>
+            <div class="chipbar"><span class="on">Temporada 1</span><span>Temporada 2</span><span>Temporada 3</span></div>
+            <ol class="eps">
+              <li><b>1</b>O primeiro verão</li>
+              <li><b>2</b>Maré alta</li>
+              <li class="now"><b>3</b>Fora de temporada</li>
+              <li><b>4</b>O retorno</li>
+            </ol>
+            <div class="next"><span>A seguir: Episódio 4</span><b>Começa em 8 s</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacidade -->
+    <section class="section" id="privacidade">
+      <div class="wrap">
+        <h2>Seus dados ficam com você</h2>
+        <p class="intro">Sem conta, sem servidor nosso e sem guia de programação. A URL da sua lista tem credenciais, por isso fica no cofre de senhas do sistema, nunca num arquivo.</p>
+        <div class="flow">
+          <div class="box mine">
+            <h3>Seu computador</h3>
+            <ul>
+              <li><b>Glyph Player</b><span>o app</span></li>
+              <li><b>Banco local</b><span>canais, favoritos e progresso</span></li>
+              <li><b>Cofre de senhas</b><span>a URL da lista</span></li>
+            </ul>
+          </div>
+          <div class="arrows" aria-hidden="true">
+            <span>lista, imagens e streams</span>
+            <span class="thin">só a verificação de versão</span>
+          </div>
+          <div class="outs">
+            <div class="box"><h3>Seu provedor</h3><p>A lista M3U e os streams que ela aponta.</p></div>
+            <div class="box"><h3>GitHub</h3><p>Só para saber se existe versão nova.</p></div>
+            <div class="box ghost"><h3>Servidor do Glyph</h3><p>Não existe.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Atualização -->
+    <section class="band">
+      <div class="wrap split">
+        <div>
+          <h2>Atualiza com um clique</h2>
+          <p>Ao abrir, o app confere se há versão nova e mostra um aviso no topo. Um clique baixa, troca os arquivos e reabre. Sem reinstalar a cada release.</p>
+          <p class="dim">Vale para o Linux instalado pelo script e para o Windows instalado pelo instalador. Nos pacotes <code>.deb</code> e do Arch, o botão abre a página da versão.</p>
+        </div>
+        <div class="visual">
+          <div class="mini updater" data-updater>
+            <div class="upd-banner" data-upd-banner>
+              <span data-upd-text>Nova versão disponível</span>
+              <span class="upd-actions">
+                <button type="button" class="btn small primary" data-upd-run>Atualizar e reiniciar</button>
+                <button type="button" class="btn small ghost" tabindex="-1">Depois</button>
+              </span>
+            </div>
+            <div class="upd-body"><h4>Ao vivo</h4><div class="chips"><span>Aurora</span><span>Meridiano</span><span>Farol</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA: instalar -->
+    <section class="cta" id="instalar">
+      <div class="wrap">
+        <h2>Instale e cole a sua lista</h2>
+        <ol class="steps">
+          <li><b>Instale</b><span>Escolha o seu sistema abaixo.</span></li>
+          <li><b>Cole a URL</b><span>Em Configurações, cole a URL da sua lista M3U_plus.</span></li>
+          <li><b>Assista</b><span>O app importa em segundo plano e você já pode navegar.</span></li>
+        </ol>
+
+        <div class="tabs" role="tablist" aria-label="Sistema operacional">
+          <button role="tab" id="o-linux" aria-selected="true" aria-controls="q-linux" type="button">Linux</button>
+          <button role="tab" id="o-windows" aria-selected="false" aria-controls="q-windows" type="button" tabindex="-1">Windows</button>
+          <button role="tab" id="o-deb" aria-selected="false" aria-controls="q-deb" type="button" tabindex="-1">Debian e Ubuntu</button>
+          <button role="tab" id="o-arch" aria-selected="false" aria-controls="q-arch" type="button" tabindex="-1">Arch Linux</button>
+        </div>
+
+        <div class="inst" role="tabpanel" id="q-linux" aria-labelledby="o-linux">
+          <p>Instala na sua pasta de usuário, sem <code>sudo</code>, e o app se atualiza sozinho. Precisa de <code>libmpv</code> e <code>libsecret</code>.</p>
+          <div class="cmd"><code id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/dienerld/glyph-player/main/linux/install.sh | sh</code><button type="button" data-copy="cmd-linux">Copiar</button></div>
+        </div>
+        <div class="inst" role="tabpanel" id="q-windows" aria-labelledby="o-windows" hidden>
+          <p>Baixe e rode o instalador. Ele cria o atalho no Menu Iniciar e o desinstalador, e o app se atualiza sozinho. Há também um <code>.zip</code> portátil, que não se atualiza.</p>
+          <p><a class="btn primary big" data-asset="setup.exe" href="https://github.com/dienerld/glyph-player/releases/latest">Baixar o instalador</a></p>
+        </div>
+        <div class="inst" role="tabpanel" id="q-deb" aria-labelledby="o-deb" hidden>
+          <p>Instala em <code>/opt/glyph-player</code>. As atualizações ficam com o gerenciador de pacotes.</p>
+          <div class="cmd"><code id="cmd-deb">sudo apt install ./glyph-player_*_amd64.deb</code><button type="button" data-copy="cmd-deb">Copiar</button></div>
+          <p><a class="btn" data-asset=".deb" href="https://github.com/dienerld/glyph-player/releases/latest">Baixar o .deb</a></p>
+        </div>
+        <div class="inst" role="tabpanel" id="q-arch" aria-labelledby="o-arch" hidden>
+          <p>Baixe o <code>PKGBUILD</code> da pasta <code>linux/arch</code> do repositório e rode, na pasta dele:</p>
+          <div class="cmd"><code id="cmd-arch">makepkg -si</code><button type="button" data-copy="cmd-arch">Copiar</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <a class="brand" href="./"><img src="gem.svg" alt="" width="24" height="25"><span>Glyph Player</span></a>
+      <p><span data-version-foot>Glyph Player</span>. Um produto da Glyph.</p>
+      <nav aria-label="Rodapé">
+        <a href="https://github.com/dienerld/glyph-player">Código no GitHub</a>
+        <a href="https://github.com/dienerld/glyph-player/releases">Versões</a>
+        <a href="https://github.com/dienerld/glyph-player/blob/main/CHANGELOG.md">Novidades</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

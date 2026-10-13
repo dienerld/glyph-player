@@ -12,6 +12,11 @@ import '../ui/theme.dart';
 
 const _panelWidth = 320.0;
 const _seekStep = Duration(seconds: 10);
+const _edgeDelay = Duration(milliseconds: 300);
+
+/// Narrower than the controls' 16 px margin, so it never covers the
+/// fullscreen button.
+const _edgeWidth = 12.0;
 
 int zapIndex(int current, int delta, int length) => (current + delta) % length;
 
@@ -27,8 +32,9 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   late final Player _player = Player();
   late final VideoController _video = VideoController(_player);
   late int _index = widget.index;
-  bool _panel = true;
-  Timer? _hide;
+  bool _panel = false;
+  bool _chrome = true; // back button, shown while the mouse is active
+  Timer? _hide, _edge;
   StreamSubscription<Duration>? _durationSub;
 
   /// Some "live" entries are really finite videos. mpv reports a duration only
@@ -61,12 +67,20 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     });
   }
 
-  /// Shows the panel and hides it again after 2.5 s without activity.
+  /// Shows the back button and hides it again after 2.5 s without activity.
   void _poke() {
     _hide?.cancel();
-    if (!_panel) setState(() => _panel = true);
+    if (!_chrome) setState(() => _chrome = true);
     _hide = Timer(const Duration(milliseconds: 2500), () {
-      if (mounted) setState(() => _panel = false);
+      if (mounted) setState(() => _chrome = false);
+    });
+  }
+
+  /// Opens the channel list once the mouse has rested on the right edge.
+  void _edgeEnter() {
+    _edge?.cancel();
+    _edge = Timer(_edgeDelay, () {
+      if (mounted) setState(() => _panel = true);
     });
   }
 
@@ -79,6 +93,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   @override
   void dispose() {
     _hide?.cancel();
+    _edge?.cancel();
     _durationSub?.cancel();
     _player.dispose();
     super.dispose();
@@ -159,10 +174,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowUp): () => _zap(-1),
         const SingleActivator(LogicalKeyboardKey.arrowDown): () => _zap(1),
-        const SingleActivator(LogicalKeyboardKey.keyL): () {
-          _hide?.cancel();
-          setState(() => _panel = !_panel);
-        },
+        const SingleActivator(LogicalKeyboardKey.keyL): () =>
+            setState(() => _panel = !_panel),
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.of(context).pop(),
         if (_seekable) ...{
@@ -194,13 +207,24 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                   top: 8,
                   left: 8,
                   child: AnimatedOpacity(
-                    opacity: _panel ? 1 : 0,
+                    opacity: _chrome ? 1 : 0,
                     duration: reduce ? Duration.zero : Tokens.hover,
                     child: IconButton(
                       tooltip: 'Voltar',
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  width: _edgeWidth,
+                  child: MouseRegion(
+                    opaque: false,
+                    onEnter: (_) => _edgeEnter(),
+                    onExit: (_) => _edge?.cancel(),
                   ),
                 ),
                 AnimatedPositioned(
@@ -210,45 +234,52 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                   bottom: 0,
                   right: _panel ? 0 : -_panelWidth,
                   width: _panelWidth,
-                  child: Material(
-                    color: Tokens.panel.withValues(alpha: 0.94),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            _current.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            _current.group,
-                            maxLines: 1,
-                            style: const TextStyle(color: Tokens.textDim),
-                          ),
-                          trailing: IconButton(
-                            tooltip: fav
-                                ? 'Remover dos favoritos'
-                                : 'Favoritar',
-                            icon: Icon(
-                              fav ? Icons.star : Icons.star_border,
-                              color: fav ? Tokens.accent : null,
+                  child: MouseRegion(
+                    onExit: (_) => setState(() => _panel = false),
+                    child: Material(
+                      color: Tokens.panel.withValues(alpha: 0.94),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            title: Text(
+                              _current.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            onPressed: () {
-                              db.setFavorite(_current.type, _current.id, !fav);
-                              ref.invalidate(favoritesProvider);
-                              setState(() {});
-                            },
+                            subtitle: Text(
+                              _current.group,
+                              maxLines: 1,
+                              style: const TextStyle(color: Tokens.textDim),
+                            ),
+                            trailing: IconButton(
+                              tooltip: fav
+                                  ? 'Remover dos favoritos'
+                                  : 'Favoritar',
+                              icon: Icon(
+                                fav ? Icons.star : Icons.star_border,
+                                color: fav ? Tokens.accent : null,
+                              ),
+                              onPressed: () {
+                                db.setFavorite(
+                                  _current.type,
+                                  _current.id,
+                                  !fav,
+                                );
+                                ref.invalidate(favoritesProvider);
+                                setState(() {});
+                              },
+                            ),
                           ),
-                        ),
-                        const Divider(height: 1, color: Tokens.line),
-                        Expanded(
-                          child: QueueList(
-                            queue: widget.queue,
-                            index: _index,
-                            onSelect: (i) => _zap(i - _index),
+                          const Divider(height: 1, color: Tokens.line),
+                          Expanded(
+                            child: QueueList(
+                              queue: widget.queue,
+                              index: _index,
+                              onSelect: (i) => _zap(i - _index),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

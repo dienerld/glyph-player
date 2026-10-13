@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS recents(
   PRIMARY KEY(type, id));
 ''';
 
+/// How many recently watched channels are kept per type; older ones fall off.
+const recentsLimit = 20;
+
 const _summaryCols =
     's.grp, s.series_name, MAX(s.logo) AS poster, '
     'COUNT(DISTINCT s.season) AS seasons, COUNT(*) AS episodes';
@@ -230,7 +233,7 @@ class Db {
     [type],
   );
 
-  List<Channel> recents({int limit = 20}) => _channels(
+  List<Channel> recents({int limit = recentsLimit}) => _channels(
     "SELECT $_cols FROM recents r JOIN streams s ON s.type=r.type AND s.id=r.id "
     "WHERE s.type='live' ORDER BY r.watched_at DESC LIMIT ?",
     [limit],
@@ -256,11 +259,20 @@ class Db {
     }
   }
 
-  void markWatched(String type, String id, DateTime at) => _db.execute(
-    'INSERT INTO recents(type,id,watched_at) VALUES(?,?,?) '
-    'ON CONFLICT(type,id) DO UPDATE SET watched_at=excluded.watched_at',
-    [type, id, at.millisecondsSinceEpoch],
-  );
+  /// Records a watch and keeps only the last [recentsLimit] per type, so
+  /// removing one entry never brings back an older one.
+  void markWatched(String type, String id, DateTime at) {
+    _db.execute(
+      'INSERT INTO recents(type,id,watched_at) VALUES(?,?,?) '
+      'ON CONFLICT(type,id) DO UPDATE SET watched_at=excluded.watched_at',
+      [type, id, at.millisecondsSinceEpoch],
+    );
+    _db.execute(
+      'DELETE FROM recents WHERE type=? AND id NOT IN '
+      '(SELECT id FROM recents WHERE type=? ORDER BY watched_at DESC LIMIT ?)',
+      [type, type, recentsLimit],
+    );
+  }
 
   String? setting(String key) {
     final r = _db.select('SELECT value FROM settings WHERE key=?', [key]);

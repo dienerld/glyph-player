@@ -100,7 +100,10 @@
       const b = li.firstChild;
       if (i === index) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
     });
-    $('[aria-current="true"]', list)?.scrollIntoView({ block: 'center' });
+    // Scroll only the list: scrollIntoView would also scroll the (off-canvas) panel's
+    // ancestors, shifting the whole player and the page.
+    const cur = $('[aria-current="true"]', list);
+    if (cur) list.scrollTop += cur.getBoundingClientRect().top - list.getBoundingClientRect().top - (list.clientHeight - cur.offsetHeight) / 2;
   }
   function zap(delta) {
     index = (index + delta + queue.length) % queue.length;

@@ -2,7 +2,7 @@
 
 Player de IPTV para desktop (Linux e Windows) que lê a **sua própria lista M3U_plus**, mesmo com 50 MB ou mais, sem travar quando a lista é atualizada. Um produto da Glyph.
 
-Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se conecta ao que a sua lista aponta: a própria lista, as miniaturas e os streams.
+Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se conecta ao que a sua lista aponta (a própria lista, as miniaturas e os streams) e ao GitHub, para verificar se há versão nova.
 
 ## O que faz
 
@@ -11,6 +11,34 @@ Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se cone
 - **Séries:** agrupadas por distribuidora (Netflix, Disney+, Globoplay…) e depois série → temporada → episódio. Favoritos, "Continuar assistindo", episódio anterior/próximo e auto-avançar ("A seguir" no último minuto).
 - **Listas que você controla:** remova itens de "Recentes" e "Continuar assistindo" (em filmes e séries o ponto de retomada é preservado e o item volta se você assistir de novo); conteúdo adulto fica oculto por padrão.
 - **Atualização sem travar:** o download e a leitura da lista rodam fora da interface e gravam num banco local (SQLite com busca FTS5).
+
+## Instalação
+
+Baixe a versão mais recente na página de [releases](https://github.com/dienerld/glyph-player/releases).
+
+- **Linux (recomendado):** instala na sua pasta de usuário, sem `sudo`, e o app se atualiza sozinho (veja [Atualizações](#atualizações)).
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/dienerld/glyph-player/main/linux/install.sh | sh
+  ```
+
+  O script instala em `~/.local/share/glyph-player`, cria o comando `glyph_player` em `~/.local/bin` e o atalho no menu de aplicativos. Precisa de `libmpv` (no Arch, o pacote `mpv`) e `libsecret`.
+- **Windows:** rode `glyph-player-X.Y.Z-windows-x64-setup.exe`. Instala em Arquivos de Programas, com atalho no Menu Iniciar e desinstalador. A versão portátil é o `.zip`: extraia e rode `glyph_player.exe`.
+- **Debian/Ubuntu:** `sudo apt install ./glyph-player_X.Y.Z_amd64.deb` (instala em `/opt/glyph-player`).
+- **Arch Linux:** baixe o `PKGBUILD` de `linux/arch/` e rode `makepkg -si` na pasta dele (instala em `/opt/glyph-player`).
+- **Outras distros:** extraia o `.tar.gz`, rode `./glyph_player` e, para ter ícone e atalho no menu, `./linux/install_desktop.sh`.
+
+Na primeira abertura, vá em **Configurações** e cole a URL da sua lista (veja [Rodando](#rodando)).
+
+### Atualizações
+
+Ao abrir, o app consulta o GitHub e, havendo versão nova, mostra um aviso no topo com **Atualizar e reiniciar**. Em **Configurações → Atualizações** você vê a versão atual e pode verificar na hora. Se não houver rede, nada é mostrado.
+
+O que o botão faz depende de como o app foi instalado:
+
+- **Instalado pelo script do Linux ou extraído numa pasta sua:** baixa a versão nova, troca os arquivos e reabre o app.
+- **Windows instalado pelo `setup.exe`:** baixa o instalador e o executa em modo silencioso (o Windows pede a confirmação de administrador).
+- **`.deb`, Arch ou `.zip` portátil:** o botão vira **Baixar** e abre a página da release; a atualização fica por sua conta ou do gerenciador de pacotes.
 
 ## Rodando
 

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../data/content_filter.dart';
 import '../data/database.dart';
@@ -10,6 +11,7 @@ import '../data/downloader.dart';
 import '../data/importer.dart';
 import '../data/playlist_url_store.dart';
 import '../data/thumb_cache.dart';
+import '../data/updater.dart';
 
 class AppPaths {
   const AppPaths({required this.dbPath, required this.downloadPath});
@@ -28,6 +30,26 @@ final appPathsProvider = Provider<AppPaths>(
 final playlistUrlStoreProvider = Provider<PlaylistUrlStore>(
   (ref) => const PlaylistUrlStore(),
 );
+
+final appVersionProvider = FutureProvider<String>(
+  (ref) async => (await PackageInfo.fromPlatform()).version,
+);
+
+/// The newer release on GitHub, or null when up to date or the check failed
+/// (offline is not an error worth showing). Invalidate to check again.
+final availableUpdateProvider = FutureProvider<UpdateInfo?>((ref) async {
+  final client = http.Client();
+  try {
+    return await fetchUpdate(
+      await ref.watch(appVersionProvider.future),
+      client: client,
+    );
+  } catch (_) {
+    return null;
+  } finally {
+    client.close();
+  }
+});
 
 class ShowAdultNotifier extends Notifier<bool> {
   static const _key = 'show_adult';

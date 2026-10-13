@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'features/shell/app_shell.dart';
 import 'ui/theme.dart';
@@ -9,6 +10,18 @@ class GlyphApp extends StatelessWidget {
     title: 'Glyph Player',
     debugShowCheckedModeBanner: false,
     theme: buildTheme(),
+    scrollBehavior: const _DragScrollBehavior(),
     home: const AppShell(),
   );
+}
+
+/// Desktop scrolling defaults to wheel and touch only; also let a mouse drag
+/// the horizontal rows.
+class _DragScrollBehavior extends MaterialScrollBehavior {
+  const _DragScrollBehavior();
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    ...super.dragDevices,
+    PointerDeviceKind.mouse,
+  };
 }

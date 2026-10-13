@@ -1,5 +1,6 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import 'natural_compare.dart';
 import 'series_title.dart';
 import 'stream_entry.dart';
 
@@ -203,10 +204,11 @@ class Db {
       .map((r) => GroupCount(r['grp'] as String, r['n'] as int))
       .toList();
 
+  /// A group's channels in natural name order (`Canal 2` before `Canal 10`).
   List<Channel> channels(String type, String group) => _channels(
     "SELECT $_cols FROM streams s WHERE s.type=? AND s.grp=? ORDER BY s.rowid",
     [type, group],
-  );
+  )..sort((a, b) => naturalCompare(a.name, b.name));
 
   List<Channel> search(String type, String text, {int limit = 60}) {
     final tokens = text

@@ -38,6 +38,19 @@ void main() {
     expect(db.channels('live', 'Globo').map((c) => c.id), ['1', '3']);
   });
 
+  test('channels come back in natural name order', () {
+    load([
+      e('1', 'Canal 100', 'G'),
+      e('2', 'Canal 20', 'G'),
+      e('3', 'Canal 10', 'G'),
+    ]);
+    expect(db.channels('live', 'G').map((c) => c.name), [
+      'Canal 10',
+      'Canal 20',
+      'Canal 100',
+    ]);
+  });
+
   test('second run updates rows and removes vanished ones', () {
     load([e('1', 'Old', 'G'), e('2', 'Gone', 'G')]);
     load([e('1', 'New', 'G')]);

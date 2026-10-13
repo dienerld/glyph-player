@@ -36,7 +36,9 @@ void main() {
 
   test('adult content is hidden by default in groups and search', () async {
     expect(c.read(showAdultProvider), isFalse);
-    expect(await c.read(liveGroupsProvider.future), ['Globo']);
+    expect((await c.read(liveGroupsProvider.future)).map((g) => g.name), [
+      'Globo',
+    ]);
     expect((await c.read(movieGroupsProvider.future)).map((g) => g.name), [
       'Filmes | Drama',
     ]);
@@ -46,7 +48,10 @@ void main() {
 
   test('turning the option on shows adult groups and persists it', () async {
     c.read(showAdultProvider.notifier).set(true);
-    expect(await c.read(liveGroupsProvider.future), ['Globo', 'Adultos']);
+    expect((await c.read(liveGroupsProvider.future)).map((g) => g.name), [
+      'Globo',
+      'Adultos',
+    ]);
     expect((await c.read(movieGroupsProvider.future)).length, 2);
     expect(db.setting('show_adult'), '1');
     final c2 = ProviderContainer(overrides: [dbProvider.overrideWithValue(db)]);

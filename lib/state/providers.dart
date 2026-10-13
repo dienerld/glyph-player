@@ -41,6 +41,29 @@ class ShowAdultNotifier extends Notifier<bool> {
   }
 }
 
+/// How Ao vivo lays out channels: a row per category, or a category picker
+/// that opens one category at a time.
+enum LiveView { rows, categories }
+
+class LiveViewNotifier extends Notifier<LiveView> {
+  static const _key = 'live_view';
+
+  @override
+  LiveView build() =>
+      ref.read(dbProvider).setting(_key) == LiveView.categories.name
+      ? LiveView.categories
+      : LiveView.rows;
+
+  void set(LiveView value) {
+    ref.read(dbProvider).setSetting(_key, value.name);
+    state = value;
+  }
+}
+
+final liveViewProvider = NotifierProvider<LiveViewNotifier, LiveView>(
+  LiveViewNotifier.new,
+);
+
 /// Adult groups are hidden unless the user opts in (Settings).
 final showAdultProvider = NotifierProvider<ShowAdultNotifier, bool>(
   ShowAdultNotifier.new,
@@ -49,13 +72,12 @@ final showAdultProvider = NotifierProvider<ShowAdultNotifier, bool>(
 List<Channel> _visible(List<Channel> items, bool showAdult) =>
     showAdult ? items : items.where((c) => !isAdultGroup(c.group)).toList();
 
-final liveGroupsProvider = FutureProvider<List<String>>((ref) async {
+final liveGroupsProvider = FutureProvider<List<GroupCount>>((ref) async {
   final show = ref.watch(showAdultProvider);
   return ref
       .watch(dbProvider)
       .groups('live')
-      .map((g) => g.name)
-      .where((n) => show || !isAdultGroup(n))
+      .where((g) => show || !isAdultGroup(g.name))
       .toList();
 });
 final groupChannelsProvider = FutureProvider.family<List<Channel>, String>(

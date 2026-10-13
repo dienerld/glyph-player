@@ -50,7 +50,9 @@ void main() {
     await c.read(importControllerProvider.notifier).refresh();
 
     expect(c.read(importControllerProvider), isA<ImportIdle>());
-    expect(await c.read(liveGroupsProvider.future), ['Globo']);
+    expect((await c.read(liveGroupsProvider.future)).map((g) => g.name), [
+      'Globo',
+    ]);
     expect(File(paths.downloadPath).existsSync(), isFalse);
   });
 

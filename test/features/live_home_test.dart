@@ -48,4 +48,32 @@ void main() {
     expect(find.text('Globo SP'), findsOneWidget);
     db.close();
   });
+
+  testWidgets('Categorias view lists categories, then opens its channels', (
+    t,
+  ) async {
+    final db = Db.memory();
+    final run = db.beginRun();
+    db.upsertBatch([
+      const StreamEntry(
+        type: StreamType.live,
+        id: '1',
+        name: 'Globo SP',
+        group: 'Globo',
+        logo: '',
+        url: 'http://h/live/U/P/1.ts',
+      ),
+    ], run);
+    db.finishRun(run);
+    await t.pumpWidget(app(db));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Categorias'));
+    await t.pumpAndSettle();
+    expect(find.text('Globo SP'), findsNothing);
+    expect(db.setting('live_view'), 'categories');
+    await t.tap(find.text('Globo'));
+    await t.pumpAndSettle();
+    expect(find.text('Globo SP'), findsOneWidget);
+    db.close();
+  });
 }

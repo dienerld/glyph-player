@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 - 2026-10-13
+
+- **Listas com URL `/play/<token>`:** o app passa a ler listas em que o tipo não vem no caminho da URL. `/play/<token>/ts` é ao vivo; `/play/<token>` com `SxxExx` no nome é série; os demais são filmes. O formato com `/live/`, `/movie/` e `/series/` continua funcionando. A seção "Formatos de lista aceitos" do README explica os dois padrões.
+
 ## 0.4.1 - 2026-10-13
 
 - **Tela cheia com `F`:** a tecla `F` entra e sai da tela cheia no Ao vivo e em filmes e séries, igual ao botão.

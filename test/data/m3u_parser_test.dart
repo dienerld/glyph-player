@@ -70,4 +70,34 @@ void main() {
     expect((r[0].seriesName, r[0].season, r[0].episode), ('Dark', 2, 3));
     expect((r[1].seriesName, r[1].season, r[1].episode), ('', 0, 0));
   });
+
+  test('play/<token> lists: /ts is live, SxxExx is series, else movie', () async {
+    final r = await parse([
+      '#EXTINF:-1 xui-id="1" tvg-id="" tvg-name="RECORD SP FHD" tvg-logo="" group-title="REDE RECORD",RECORD SP FHD',
+      'http://h/play/TOK1/ts',
+      '#EXTINF:-1 xui-id="2" tvg-name="Novela S02E27" tvg-logo="" group-title="Novelas",Novela S02E27',
+      'http://h/play/TOK2',
+      '#EXTINF:-1 xui-id="3" tvg-name="Filme (2020)" tvg-logo="" group-title="Filmes",Filme (2020)',
+      'http://h/play/TOK3',
+    ]);
+    expect(r.map((e) => e.type), [
+      StreamType.live,
+      StreamType.series,
+      StreamType.movie,
+    ]);
+    expect(r.map((e) => e.id), ['TOK1', 'TOK2', 'TOK3']);
+    expect(r[1].seriesName, 'Novela');
+    expect(r[1].season, 2);
+    expect(r[1].episode, 27);
+  });
+
+  test('play/<token> movies with [L] suffix and accents are movies', () async {
+    final r = await parse([
+      '#EXTINF:-1 xui-id="4826602" tvg-name="O Senhor dos Anéis: O Retorno do Rei [L]" tvg-logo="http://x/l.jpg" group-title="Legendados",O Senhor dos Anéis: O Retorno do Rei [L]',
+      'http://h/play/TOK9',
+    ]);
+    expect(r.single.type, StreamType.movie);
+    expect(r.single.id, 'TOK9');
+    expect(r.single.name, 'O Senhor dos Anéis: O Retorno do Rei [L]');
+  });
 }

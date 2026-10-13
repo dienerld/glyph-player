@@ -62,6 +62,19 @@ Na primeira abertura, vá em **Configurações**, cole a URL da sua lista M3U_pl
 | Séries | `P` / `N` | episódio anterior / próximo |
 | Todos | espaço, `M`, `F`, `Esc` | pausar, mudo, tela cheia, voltar |
 
+## Formatos de lista aceitos
+
+O app reconhece dois padrões de M3U_plus. O tipo de cada entrada (Ao vivo, Filmes ou Séries) vem da URL do stream:
+
+| Padrão | Exemplo de URL | Tipo |
+|---|---|---|
+| Com tipo no caminho | `http://host/live/usuario/senha/123.ts` | `/live/` ao vivo, `/movie/` filme, `/series/` série |
+| Com token em `/play/` | `http://host/play/TOKEN/ts` | termina em `/ts`: ao vivo |
+| Com token em `/play/` | `http://host/play/TOKEN` | sem `SxxExx` no nome: filme |
+| Com token em `/play/` | `http://host/play/TOKEN` | com `SxxExx` no nome (ex.: `S02E27`): série |
+
+No padrão `/play/`, o token da URL identifica a entrada. Como o caminho não informa o tipo de filmes e séries, o app usa o nome: um filme com `SxxExx` no título seria tratado como série, e uma série sem esse marcador aparece em Filmes. Entradas com outro formato de URL são ignoradas.
+
 ## Build
 
 ```bash

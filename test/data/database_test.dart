@@ -197,4 +197,18 @@ void main() {
       expect(db.continueWatching().map((c) => c.id), ['1']);
     },
   );
+
+  test(
+    'recents keep only the last 20, so removing one never resurfaces an old one',
+    () {
+      load([for (var i = 0; i < 25; i++) e('$i', 'C$i', 'G')]);
+      for (var i = 0; i < 25; i++) {
+        db.markWatched('live', '$i', DateTime.utc(2026, 1, 1, 0, i));
+      }
+      expect(db.recents(limit: 100).length, 20);
+      db.removeRecent('live', '24');
+      expect(db.recents(limit: 100).length, 19);
+      expect(db.recents(limit: 100).map((c) => c.id), isNot(contains('4')));
+    },
+  );
 }

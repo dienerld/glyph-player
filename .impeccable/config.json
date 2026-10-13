@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-10-13T04:25:05.305Z",
+        "reason": "assistant triage, not user-confirmed: static analysis cannot resolve var()/clamp() paddings on .band/.cta/.keycaps (real padding 24-140px, seen in screenshots at 390/1100/1360px) and .app is a full-bleed window mock"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "site/style.css"
+        ],
+        "createdAt": "2026-10-13T04:25:05.336Z",
+        "reason": "project design direction (docs/design/DIRECTION.md, Glyph brand) specifies Fraunces for display and the app already ships it; assistant triage, not user-confirmed"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-10-13T04:25:05.365Z",
+        "reason": "project design direction (docs/design/DIRECTION.md, Glyph brand) specifies Fraunces for display and the app already ships it; assistant triage, not user-confirmed"
+      }
+    ]
+  }
+}

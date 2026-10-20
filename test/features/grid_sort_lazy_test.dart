@@ -60,10 +60,10 @@ void main() {
         .items
         .length;
     expect(count(), gridPageSize);
-    await t.drag(find.byType(GridView), const Offset(0, -100000));
+    await t.drag(find.byType(CustomScrollView), const Offset(0, -100000));
     await t.pumpAndSettle();
     expect(count(), gridPageSize * 2);
-    await t.drag(find.byType(GridView), const Offset(0, -100000));
+    await t.drag(find.byType(CustomScrollView), const Offset(0, -100000));
     await t.pumpAndSettle();
     expect(count(), 130);
     db.close();
@@ -73,15 +73,21 @@ void main() {
     final db = await seeded(130);
     await t.pumpWidget(app(db));
     await t.pumpAndSettle();
-    await t.drag(find.byType(GridView), const Offset(0, -3000));
+    await t.drag(find.byType(CustomScrollView), const Offset(0, -3000));
     await t.pumpAndSettle();
-    final grid = t.widget<GridView>(find.byType(GridView));
+    final grid = t.widget<CustomScrollView>(find.byType(CustomScrollView));
     expect(grid.controller!.offset, greaterThan(0));
     await t.tap(find.byTooltip('Ordenar'));
     await t.pumpAndSettle();
     await t.tap(find.text('Z → A'), warnIfMissed: false);
     await t.pumpAndSettle();
-    expect(t.widget<GridView>(find.byType(GridView)).controller!.offset, 0);
+    expect(
+      t
+          .widget<CustomScrollView>(find.byType(CustomScrollView))
+          .controller!
+          .offset,
+      0,
+    );
     db.close();
   });
 }

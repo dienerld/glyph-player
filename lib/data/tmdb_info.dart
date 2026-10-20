@@ -57,7 +57,7 @@ enum TmdbImageSize {
   /// Grid cards.
   card('w342'),
 
-  /// The movie details screen.
+  /// The movie details panel.
   details('w500');
 
   const TmdbImageSize(this.path);

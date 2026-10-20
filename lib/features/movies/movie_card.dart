@@ -8,14 +8,15 @@ import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
 import '../shared/card_actions.dart';
+import '../shared/item_expansion.dart';
 import '../shared/tmdb_display.dart';
-import 'movie_details_page.dart';
 import 'movie_routes.dart';
 import 'movie_tag.dart';
 
 /// Where a tap on a [MovieCard] goes.
 enum MovieOpen {
-  /// The details screen when a TMDB key is set, the player otherwise.
+  /// With a TMDB key, the details panel below the card's row when the card
+  /// sits in an expandable list ([ExpandableItem]); the player otherwise.
   details,
 
   /// Straight to the player: resuming a movie (Continuar assistindo).
@@ -55,17 +56,41 @@ const _ratingSlotWidth = 56.0, _ratingSlotHeight = 22.0;
 
 class _MovieCardState extends ConsumerState<MovieCard> {
   bool _active = false;
+  final _focus = FocusNode(debugLabel: 'MovieCard');
+
+  /// The expandable list this card is in, if any.
+  ExpandableItem? _item;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final item = _item = ExpandableItem.of(context);
+    // Its panel was closed with Esc or the close button: focus comes back.
+    if (item != null && item.expansion.takeFocusBack(item.itemKey)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focus.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  /// Whether a tap opens the details panel instead of the player.
+  bool get _toDetails =>
+      widget.open == MovieOpen.details &&
+      _item != null &&
+      ref.read(tmdbEnabledProvider);
 
   void _open() {
-    final toDetails =
-        widget.open == MovieOpen.details && ref.read(tmdbEnabledProvider);
-    Navigator.of(context).push(
-      toDetails
-          ? MaterialPageRoute<void>(
-              builder: (_) => MovieDetailsPage(movie: widget.movie),
-            )
-          : moviePlayerRoute(ref, widget.movie),
-    );
+    if (_toDetails) {
+      _item!.toggle();
+    } else {
+      Navigator.of(context).push(moviePlayerRoute(ref, widget.movie));
+    }
   }
 
   @override
@@ -79,7 +104,8 @@ class _MovieCardState extends ConsumerState<MovieCard> {
         : null;
     final poster = posterUrl(m.logo, info, TmdbImageSize.card);
     final reduce = MediaQuery.of(context).disableAnimations;
-    return FocusableActionDetector(
+    final card = FocusableActionDetector(
+      focusNode: _focus,
       onShowFocusHighlight: (v) => setState(() => _active = v),
       onShowHoverHighlight: (v) => setState(() => _active = v),
       actions: {
@@ -192,5 +218,8 @@ class _MovieCardState extends ConsumerState<MovieCard> {
         ),
       ),
     );
+    final expandable =
+        tmdb && widget.open == MovieOpen.details && _item != null;
+    return Semantics(expanded: expandable ? _item!.isOpen : null, child: card);
   }
 }

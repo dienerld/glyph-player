@@ -9,6 +9,7 @@ import '../shared/search_field.dart';
 import '../shared/sort_menu.dart';
 import 'movie_card.dart';
 import 'movie_categories_page.dart';
+import 'movie_details_panel.dart';
 
 const movieGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
   maxCrossAxisExtent: 210,
@@ -18,7 +19,8 @@ const movieGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
 );
 
 /// Movies of [scope] in a lazy grid, with the "no results" message when the
-/// scope is a search.
+/// scope is a search. With a TMDB key a card opens its details in the grid,
+/// below its row.
 class MovieResults extends ConsumerWidget {
   const MovieResults({super.key, required this.scope, required this.query});
   final GridScope scope;
@@ -32,6 +34,7 @@ class MovieResults extends ConsumerWidget {
     delegate: movieGridDelegate,
     itemBuilder: (_, m) => MovieCard(movie: m),
     emptyText: scope.searching ? noResultsText(query) : null,
+    panel: movieGridPanel,
   );
 }
 

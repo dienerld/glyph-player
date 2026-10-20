@@ -10,7 +10,9 @@ import '../data/database.dart';
 import '../data/downloader.dart';
 import '../data/importer.dart';
 import '../data/playlist_url_store.dart';
+import '../data/task_queue.dart';
 import '../data/thumb_cache.dart';
+import '../data/tmdb_client.dart';
 import '../data/updater.dart';
 
 class AppPaths {
@@ -356,6 +358,131 @@ final searchProvider = FutureProvider.family<List<Channel>, (String, String)>((
   final show = ref.watch(showAdultProvider);
   return _visible(ref.watch(dbProvider).search(q.$1, q.$2), show);
 });
+
+// --- TMDB metadata -------------------------------------------------------
+
+/// TMDB lookups running at once, at most.
+const tmdbMaxConcurrent = 4;
+
+/// HTTP client of the TMDB calls; overridden in tests.
+final tmdbHttpClientProvider = Provider<http.Client>((ref) {
+  final client = http.Client();
+  ref.onDispose(client.close);
+  return client;
+});
+
+/// Shared queue of TMDB searches ([tmdbMaxConcurrent] at a time).
+final tmdbQueueProvider = Provider<TaskQueue>(
+  (ref) => TaskQueue(limit: tmdbMaxConcurrent),
+);
+
+/// The user's TMDB key (v3 API key or v4 token), '' when unset. Stored in
+/// the local settings.
+class TmdbKeyNotifier extends Notifier<String> {
+  static const _key = 'tmdb_key';
+
+  @override
+  String build() => (ref.read(dbProvider).setting(_key) ?? '').trim();
+
+  /// Saves [value] trimmed; '' turns TMDB off. Lookups follow the new key.
+  void set(String value) {
+    final v = value.trim();
+    ref.read(dbProvider).setSetting(_key, v);
+    if (v != state) state = v;
+  }
+
+  /// "Testar chave": asks TMDB whether [key] (the saved key when omitted)
+  /// is accepted. An empty key is [TmdbKeyStatus.invalid], with no request.
+  Future<TmdbKeyStatus> check([String? key]) async {
+    final k = (key ?? state).trim();
+    if (k.isEmpty) return TmdbKeyStatus.invalid;
+    return TmdbClient(k, client: ref.read(tmdbHttpClientProvider)).checkKey();
+  }
+
+  /// "Limpar cache": forgets every TMDB answer; visible items ask again.
+  void clearCache() {
+    ref.read(dbProvider).clearTmdbCache();
+    ref
+      ..invalidate(tmdbMovieProvider)
+      ..invalidate(tmdbSeriesProvider);
+  }
+}
+
+final tmdbKeyProvider = NotifierProvider<TmdbKeyNotifier, String>(
+  TmdbKeyNotifier.new,
+);
+
+/// Whether a TMDB key is set. Without one the app never calls TMDB.
+final tmdbEnabledProvider = Provider<bool>(
+  (ref) => ref.watch(tmdbKeyProvider).isNotEmpty,
+);
+
+/// Client for the current key; null without one.
+final tmdbClientProvider = Provider<TmdbClient?>((ref) {
+  final key = ref.watch(tmdbKeyProvider);
+  if (key.isEmpty) return null;
+  return TmdbClient(key, client: ref.watch(tmdbHttpClientProvider));
+});
+
+/// Cache first, then TMDB through the shared queue. A lookup still queued
+/// when its provider is disposed (the card left the screen) is dropped.
+/// Found and not-found answers are cached; failures are not and give null.
+Future<TmdbInfo?> _tmdbLookup(
+  Ref ref,
+  TmdbKind kind,
+  String title,
+  int year,
+  Future<TmdbResult> Function(TmdbClient client) search,
+) async {
+  final client = ref.watch(tmdbClientProvider);
+  if (client == null) return null;
+  final key = tmdbTitleKey(title);
+  if (key.isEmpty) return null;
+  final db = ref.watch(dbProvider);
+  final cached = db.tmdbCached(kind, key, year: year);
+  if (cached != null && cached.isFresh(DateTime.now())) return cached.info;
+  var disposed = false;
+  ref.onDispose(() => disposed = true);
+  final result = await ref
+      .read(tmdbQueueProvider)
+      .run(() => search(client), isCancelled: () => disposed);
+  switch (result) {
+    case TmdbFound(:final info):
+      db.putTmdb(kind, key, info, DateTime.now(), year: year);
+      return info;
+    case TmdbNotFound():
+      db.putTmdb(kind, key, null, DateTime.now(), year: year);
+      return null;
+    default: // dropped, invalid key or unavailable: ask again next time
+      return null;
+  }
+}
+
+/// TMDB data of a movie keyed by `(clean title, year)`; build the key from
+/// the stream name with [tmdbMovieQuery]. Null without a key, when TMDB has
+/// no match, or when the lookup failed.
+final tmdbMovieProvider = FutureProvider.autoDispose
+    .family<TmdbInfo?, (String, int?)>(
+      (ref, q) => _tmdbLookup(
+        ref,
+        TmdbKind.movie,
+        q.$1,
+        q.$2 ?? 0,
+        (c) => c.searchMovie(q.$1.trim(), year: q.$2),
+      ),
+    );
+
+/// TMDB data of a series keyed by its `series_name` ([SeriesSummary.name]).
+/// Null without a key, when TMDB has no match, or when the lookup failed.
+final tmdbSeriesProvider = FutureProvider.autoDispose.family<TmdbInfo?, String>(
+  (ref, name) => _tmdbLookup(
+    ref,
+    TmdbKind.series,
+    name,
+    0,
+    (c) => c.searchTv(name.trim()),
+  ),
+);
 
 sealed class ImportState {
   const ImportState();

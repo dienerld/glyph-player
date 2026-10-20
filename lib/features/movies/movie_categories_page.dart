@@ -78,6 +78,7 @@ class _MovieCategoriesPageState extends ConsumerState<MovieCategoriesPage> {
                                 title: 'Continuar assistindo',
                                 items: cont,
                                 db: db,
+                                open: MovieOpen.player, // resuming
                                 withProgress: true,
                                 onRemove: (m) {
                                   db.hideContinue(m.type, m.id, DateTime.now());
@@ -133,12 +134,14 @@ class _MovieRow extends StatelessWidget {
     required this.title,
     required this.items,
     required this.db,
+    this.open = MovieOpen.details,
     this.withProgress = false,
     this.onRemove,
   });
   final String title;
   final List<Channel> items;
   final Db db;
+  final MovieOpen open;
   final bool withProgress;
   final void Function(Channel)? onRemove;
 
@@ -168,6 +171,7 @@ class _MovieRow extends StatelessWidget {
               width: 210,
               child: MovieCard(
                 movie: items[i],
+                open: open,
                 progress: frac,
                 onRemove: onRemove == null ? null : () => onRemove!(items[i]),
               ),

@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
-import '../live/search_delegate.dart';
 import '../settings/settings_page.dart';
+import '../shared/search_field.dart';
 import '../shared/section_tile.dart';
+import '../shared/sort_menu.dart';
 import 'movie_card.dart';
 import 'movie_grid_page.dart';
 
@@ -16,11 +17,20 @@ String categoryLabel(String group) {
   return label.isEmpty ? 'Sem categoria' : label;
 }
 
-class MovieCategoriesPage extends ConsumerWidget {
+class MovieCategoriesPage extends ConsumerStatefulWidget {
   const MovieCategoriesPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MovieCategoriesPage> createState() =>
+      _MovieCategoriesPageState();
+}
+
+class _MovieCategoriesPageState extends ConsumerState<MovieCategoriesPage> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = GridScope.search(_query);
     final groups = ref.watch(movieGroupsProvider);
     final cont = ref.watch(continueWatchingProvider).value ?? const [];
     final favs = ref.watch(movieFavoritesProvider).value ?? const [];
@@ -37,73 +47,80 @@ class MovieCategoriesPage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const Spacer(),
-                IconButton(
-                  tooltip: 'Buscar',
-                  icon: const Icon(Icons.search),
-                  onPressed: () => showSearch(
-                    context: context,
-                    delegate: ChannelSearchDelegate(type: 'movie'),
+                SizedBox(
+                  width: 300,
+                  child: SearchField(
+                    hint: 'Buscar filmes',
+                    onChanged: (q) => setState(() => _query = q),
                   ),
                 ),
+                if (scope.searching)
+                  SortMenu(
+                    value: ref.watch(movieSortProvider),
+                    onSelected: ref.read(movieSortProvider.notifier).set,
+                  ),
               ],
             ),
           ),
           Expanded(
-            child: groups.when(
-              loading: () => const SizedBox.shrink(),
-              error: (e, _) => Center(child: Text('Erro: $e')),
-              data: (g) {
-                if (g.isEmpty) return const _EmptyMovies();
-                return CustomScrollView(
-                  slivers: [
-                    if (cont.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _MovieRow(
-                          title: 'Continuar assistindo',
-                          items: cont,
-                          db: db,
-                          withProgress: true,
-                          onRemove: (m) {
-                            db.hideContinue(m.type, m.id, DateTime.now());
-                            ref.invalidate(continueWatchingProvider);
-                          },
-                        ),
-                      ),
-                    if (favs.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _MovieRow(
-                          title: 'Favoritos',
-                          items: favs,
-                          db: db,
-                        ),
-                      ),
-                    SliverPadding(
-                      padding: const EdgeInsets.all(24),
-                      sliver: SliverGrid.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 240,
-                              mainAxisExtent: 104,
-                              crossAxisSpacing: Tokens.gap,
-                              mainAxisSpacing: Tokens.gap,
+            child: scope.searching
+                ? MovieResults(scope: scope, query: _query)
+                : groups.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, _) => Center(child: Text('Erro: $e')),
+                    data: (g) {
+                      if (g.isEmpty) return const _EmptyMovies();
+                      return CustomScrollView(
+                        slivers: [
+                          if (cont.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _MovieRow(
+                                title: 'Continuar assistindo',
+                                items: cont,
+                                db: db,
+                                withProgress: true,
+                                onRemove: (m) {
+                                  db.hideContinue(m.type, m.id, DateTime.now());
+                                  ref.invalidate(continueWatchingProvider);
+                                },
+                              ),
                             ),
-                        itemCount: g.length,
-                        itemBuilder: (_, i) => SectionTile(
-                          label: categoryLabel(g[i].name),
-                          countText: '${g[i].count} filmes',
-                          tintKey: g[i].name,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => MovieGridPage(group: g[i].name),
+                          if (favs.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _MovieRow(
+                                title: 'Favoritos',
+                                items: favs,
+                                db: db,
+                              ),
+                            ),
+                          SliverPadding(
+                            padding: const EdgeInsets.all(24),
+                            sliver: SliverGrid.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 240,
+                                    mainAxisExtent: 104,
+                                    crossAxisSpacing: Tokens.gap,
+                                    mainAxisSpacing: Tokens.gap,
+                                  ),
+                              itemCount: g.length,
+                              itemBuilder: (_, i) => SectionTile(
+                                label: categoryLabel(g[i].name),
+                                countText: '${g[i].count} filmes',
+                                tintKey: g[i].name,
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        MovieGridPage(group: g[i].name),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                        ],
+                      );
+                    },
+                  ),
           ),
         ],
       ),

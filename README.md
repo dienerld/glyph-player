@@ -7,8 +7,8 @@ Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se cone
 ## O que faz
 
 - **Ao vivo:** canais por categoria, busca, recentes, favoritos, troca de canal com ↑/↓ e painel lateral de canais. Entradas "ao vivo" que na verdade são vídeos permitem avançar e voltar 10 s com ← e →.
-- **Filmes:** escolha a categoria e veja a grade de filmes (título, ano e etiquetas como 4K), busca, favoritos, "Continuar assistindo" e retomada de onde parou.
-- **Séries:** agrupadas por distribuidora (Netflix, Disney+, Globoplay…) e depois série → temporada → episódio. Favoritos, "Continuar assistindo", episódio anterior/próximo e auto-avançar ("A seguir" no último minuto).
+- **Filmes:** escolha a categoria e veja a grade de filmes (título, ano e etiquetas como 4K), busca por qualquer trecho do título (em todas as categorias ou só na aberta), ordenação (recentes, A → Z, Z → A), favoritos, "Continuar assistindo" e retomada de onde parou.
+- **Séries:** agrupadas por distribuidora (Netflix, Disney+, Globoplay…) e depois série → temporada → episódio. Busca e ordenação como nos filmes, favoritos, "Continuar assistindo", episódio anterior/próximo e auto-avançar ("A seguir" no último minuto).
 - **Listas que você controla:** remova itens de "Recentes" e "Continuar assistindo" (em filmes e séries o ponto de retomada é preservado e o item volta se você assistir de novo); conteúdo adulto fica oculto por padrão.
 - **Atualização sem travar:** o download e a leitura da lista rodam fora da interface e gravam num banco local (SQLite com busca FTS5).
 

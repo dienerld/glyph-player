@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 - 2026-10-20
+
+- **Ordenação de filmes e séries:** seletor nas categorias com Adicionados recentes, A → Z e Z → A. A escolha fica salva.
+- **Grades carregam aos poucos:** filmes e séries mostram 60 itens por vez e carregam mais conforme a rolagem, em vez de carregar a categoria inteira.
+- **Busca em filmes e séries:** campo de busca nas telas de Filmes e de Séries, que procura em todas as categorias, e dentro de uma categoria ou distribuidora, só nela. Ignora acentos e maiúsculas. Com uma ou duas letras, mostra os títulos que começam por elas; a partir de três, acha qualquer trecho do título.
+- **Metadados do TMDB (opcional):** com uma chave gratuita da API do TMDB colada em Configurações, a grade de filmes mostra pôster (quando a lista não traz) e nota, e um clique no filme abre os detalhes na própria lista, logo abaixo da linha dele, com ano, nota, sinopse e o botão **Assistir** (Esc ou o mesmo clique fecham). Séries mostram nota e sinopse. Continuar assistindo e Recentes continuam abrindo o player direto. Os resultados ficam em cache local, com o botão **Limpar cache de metadados**. Sem a chave, nada muda e nada sai do computador; com ela, só os títulos e anos que você navega são enviados ao TMDB.
+
 ## 0.4.2 - 2026-10-13
 
 - **Listas com URL `/play/<token>`:** o app passa a ler listas em que o tipo não vem no caminho da URL. `/play/<token>/ts` é ao vivo; `/play/<token>` com `SxxExx` no nome é série; os demais são filmes. O formato com `/live/`, `/movie/` e `/series/` continua funcionando. A seção "Formatos de lista aceitos" do README explica os dois padrões.

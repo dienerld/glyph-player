@@ -5,15 +5,25 @@ import '../../data/database.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../settings/settings_page.dart';
+import '../shared/search_field.dart';
 import '../shared/section_tile.dart';
+import '../shared/sort_menu.dart';
 import 'series_card.dart';
 import 'series_grid_page.dart';
 
-class SeriesHomePage extends ConsumerWidget {
+class SeriesHomePage extends ConsumerStatefulWidget {
   const SeriesHomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SeriesHomePage> createState() => _SeriesHomePageState();
+}
+
+class _SeriesHomePageState extends ConsumerState<SeriesHomePage> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = GridScope.search(_query);
     final sections = ref.watch(seriesSectionsProvider);
     final cont = ref.watch(continueSeriesProvider).value ?? const [];
     final favs = ref.watch(seriesFavoritesProvider).value ?? const [];
@@ -29,60 +39,78 @@ class SeriesHomePage extends ConsumerWidget {
                   'Séries',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
+                const Spacer(),
+                SizedBox(
+                  width: 300,
+                  child: SearchField(
+                    hint: 'Buscar séries',
+                    onChanged: (q) => setState(() => _query = q),
+                  ),
+                ),
+                if (scope.searching)
+                  SortMenu(
+                    value: ref.watch(seriesSortProvider),
+                    onSelected: ref.read(seriesSortProvider.notifier).set,
+                  ),
               ],
             ),
           ),
           Expanded(
-            child: sections.when(
-              loading: () => const SizedBox.shrink(),
-              error: (e, _) => Center(child: Text('Erro: $e')),
-              data: (g) {
-                if (g.isEmpty) return const _EmptySeries();
-                return CustomScrollView(
-                  slivers: [
-                    if (cont.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _SeriesRow(
-                          title: 'Continuar assistindo',
-                          items: cont,
-                          removable: true,
-                        ),
-                      ),
-                    if (favs.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _SeriesRow(title: 'Favoritos', items: favs),
-                      ),
-                    SliverPadding(
-                      padding: const EdgeInsets.all(24),
-                      sliver: SliverGrid.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 240,
-                              mainAxisExtent: 104,
-                              crossAxisSpacing: Tokens.gap,
-                              mainAxisSpacing: Tokens.gap,
-                            ),
-                        itemCount: g.length,
-                        itemBuilder: (_, i) {
-                          final n = db.seriesCount(g[i].name);
-                          return SectionTile(
-                            label: distributorLabel(g[i].name),
-                            countText: n == 1 ? '1 série' : '$n séries',
-                            tintKey: g[i].name,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    SeriesGridPage(group: g[i].name),
+            child: scope.searching
+                ? SeriesResults(scope: scope, query: _query)
+                : sections.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, _) => Center(child: Text('Erro: $e')),
+                    data: (g) {
+                      if (g.isEmpty) return const _EmptySeries();
+                      return CustomScrollView(
+                        slivers: [
+                          if (cont.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _SeriesRow(
+                                title: 'Continuar assistindo',
+                                items: cont,
+                                removable: true,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                          if (favs.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _SeriesRow(
+                                title: 'Favoritos',
+                                items: favs,
+                              ),
+                            ),
+                          SliverPadding(
+                            padding: const EdgeInsets.all(24),
+                            sliver: SliverGrid.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 240,
+                                    mainAxisExtent: 104,
+                                    crossAxisSpacing: Tokens.gap,
+                                    mainAxisSpacing: Tokens.gap,
+                                  ),
+                              itemCount: g.length,
+                              itemBuilder: (_, i) {
+                                final n = db.seriesCount(g[i].name);
+                                return SectionTile(
+                                  label: distributorLabel(g[i].name),
+                                  countText: n == 1 ? '1 série' : '$n séries',
+                                  tintKey: g[i].name,
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          SeriesGridPage(group: g[i].name),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
         ],
       ),

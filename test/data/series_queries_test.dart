@@ -39,9 +39,9 @@ void main() {
   tearDown(() => db.close());
 
   test(
-    'seriesIn summarises name, poster, seasons and episodes, sorted by name',
+    'seriesPage summarises name, poster, seasons and episodes, sorted by name',
     () {
-      final list = db.seriesIn('Series | Netflix');
+      final list = db.seriesPage('Series | Netflix', SortOrder.az);
       expect(list.map((s) => s.name), ['Alias', 'Dark']);
       final dark = list[1];
       expect(dark.poster, 'http://p/dark.jpg');

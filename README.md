@@ -2,13 +2,13 @@
 
 Player de IPTV para desktop (Linux e Windows) que lê a **sua própria lista M3U_plus**, mesmo com 50 MB ou mais, sem travar quando a lista é atualizada. Um produto da Glyph. Página do produto: https://dienerld.github.io/glyph-player/
 
-Tudo fica na sua máquina: sem conta, sem API remota, sem EPG. O app só se conecta ao que a sua lista aponta (a própria lista, as miniaturas e os streams) e ao GitHub, para verificar se há versão nova.
+Tudo fica na sua máquina por padrão: sem conta, sem API remota, sem EPG. O app só se conecta ao que a sua lista aponta (a própria lista, as miniaturas e os streams) e ao GitHub, para verificar se há versão nova. Só se você colar uma chave do TMDB, ele também se conecta ao TMDB, como descrito em [Metadados do TMDB](#metadados-do-tmdb-opcional).
 
 ## O que faz
 
 - **Ao vivo:** canais por categoria, busca, recentes, favoritos, troca de canal com ↑/↓ e painel lateral de canais. Entradas "ao vivo" que na verdade são vídeos permitem avançar e voltar 10 s com ← e →.
-- **Filmes:** escolha a categoria e veja a grade de filmes (título, ano e etiquetas como 4K), busca, favoritos, "Continuar assistindo" e retomada de onde parou.
-- **Séries:** agrupadas por distribuidora (Netflix, Disney+, Globoplay…) e depois série → temporada → episódio. Favoritos, "Continuar assistindo", episódio anterior/próximo e auto-avançar ("A seguir" no último minuto).
+- **Filmes:** escolha a categoria e veja a grade de filmes (título, ano e etiquetas como 4K), busca por qualquer trecho do título (em todas as categorias ou só na aberta), ordenação (recentes, A → Z, Z → A), favoritos, "Continuar assistindo" e retomada de onde parou. Com a chave do TMDB (opcional), mostra pôster e nota, e um clique no filme abre os detalhes com sinopse na própria grade, logo abaixo da linha dele.
+- **Séries:** agrupadas por distribuidora (Netflix, Disney+, Globoplay…) e depois série → temporada → episódio. Busca e ordenação como nos filmes, favoritos, "Continuar assistindo", episódio anterior/próximo e auto-avançar ("A seguir" no último minuto). Com a chave do TMDB (opcional), mostra nota e sinopse.
 - **Listas que você controla:** remova itens de "Recentes" e "Continuar assistindo" (em filmes e séries o ponto de retomada é preservado e o item volta se você assistir de novo); conteúdo adulto fica oculto por padrão.
 - **Atualização sem travar:** o download e a leitura da lista rodam fora da interface e gravam num banco local (SQLite com busca FTS5).
 
@@ -136,6 +136,16 @@ assets/icon/     ícone (SVG-fonte); tool/build_icons.sh gera PNG e .ico
 - A URL da lista fica no cofre do sistema (libsecret no Linux, Credential Manager no Windows).
 - O banco (`glyph.db`) e as miniaturas ficam nas pastas de dados e de cache do usuário. O banco guarda as URLs de stream da sua lista, que podem conter credenciais: não o compartilhe nem o versione.
 - Listas `*.m3u` e `*.m3u8` estão no `.gitignore`.
+
+### Metadados do TMDB (opcional)
+
+Sem chave, o app não envia nada ao TMDB. Para ver pôsteres, notas e sinopses, crie uma conta gratuita em [themoviedb.org](https://www.themoviedb.org/settings/api), gere uma chave de API e cole-a em **Configurações**. Com a chave:
+
+- só os títulos e anos dos filmes e séries que você navega (grade, busca e Favoritos) são enviados ao TMDB;
+- as respostas ficam em cache no banco local, e **Configurações → Limpar cache de metadados** apaga esse cache;
+- Continuar assistindo e Recentes continuam abrindo o player direto.
+
+This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 ## Ícone e marca
 

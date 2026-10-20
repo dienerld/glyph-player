@@ -45,6 +45,9 @@ class _FavoriteStarState extends ConsumerState<FavoriteStar> {
 
   @override
   Widget build(BuildContext context) {
+    // A movie's details panel has its own star, on screen next to the card:
+    // follow it.
+    if (widget.type == 'movie') ref.watch(movieFavoritesProvider);
     final fav = ref.read(dbProvider).isFavorite(widget.type, widget.id);
     if (!fav && !widget.show) return const SizedBox.shrink();
     return IconButton.filledTonal(

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
+import '../../data/tmdb_info.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
 import '../shared/card_actions.dart';
 import '../shared/monogram.dart';
+import '../shared/tmdb_display.dart';
 import 'series_page.dart';
 
 const seriesCardWidth = 160.0;
@@ -49,6 +51,11 @@ class _SeriesCardState extends ConsumerState<SeriesCard> {
   Widget build(BuildContext context) {
     final s = widget.summary;
     final reduce = MediaQuery.of(context).disableAnimations;
+    // The list's poster wins: TMDB is only asked when the list has none.
+    final tmdbInfo = s.poster.isEmpty && ref.watch(tmdbEnabledProvider)
+        ? ref.watch(tmdbSeriesProvider(s.name)).value
+        : null;
+    final poster = posterUrl(s.poster, tmdbInfo, TmdbImageSize.card);
     return FocusableActionDetector(
       onShowFocusHighlight: (v) => setState(() => _active = v),
       onShowHoverHighlight: (v) => setState(() => _active = v),
@@ -82,7 +89,7 @@ class _SeriesCardState extends ConsumerState<SeriesCard> {
                           width: 2,
                         ),
                       ),
-                      child: Poster(url: s.poster, name: s.name),
+                      child: Poster(url: poster, name: s.name),
                     ),
                     if (widget.removable)
                       Positioned(

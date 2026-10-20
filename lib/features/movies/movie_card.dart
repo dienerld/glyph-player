@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/movie_title.dart';
+import '../../data/tmdb_info.dart';
+import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../shared/cached_thumb.dart';
 import '../shared/card_actions.dart';
-import 'vod_player_page.dart';
+import '../shared/item_expansion.dart';
+import '../shared/tmdb_display.dart';
+import 'movie_routes.dart';
+import 'movie_tag.dart';
 
-/// Typographic card: most movies have no poster, so the title leads.
-class MovieCard extends StatefulWidget {
+/// Where a tap on a [MovieCard] goes.
+enum MovieOpen {
+  /// With a TMDB key, the details panel below the card's row when the card
+  /// sits in an expandable list ([ExpandableItem]); the player otherwise.
+  details,
+
+  /// Straight to the player: resuming a movie (Continuar assistindo).
+  player,
+}
+
+/// Typographic card: most movies have no poster, so the title leads. With a
+/// TMDB key it also shows the TMDB poster (when the list has none) and the
+/// rating once they are known.
+class MovieCard extends ConsumerStatefulWidget {
   const MovieCard({
     super.key,
     required this.movie,
+    this.open = MovieOpen.details,
     this.progress,
     this.onRemove,
   });
   final Channel movie;
+
+  /// What a tap opens; see [MovieOpen].
+  final MovieOpen open;
 
   /// 0..1 watched fraction, shown as a bar when set.
   final double? progress;
@@ -24,24 +46,66 @@ class MovieCard extends StatefulWidget {
   final VoidCallback? onRemove;
 
   @override
-  State<MovieCard> createState() => _MovieCardState();
+  ConsumerState<MovieCard> createState() => _MovieCardState();
 }
 
-class _MovieCardState extends State<MovieCard> {
-  bool _active = false;
+/// Space kept at the end of the tag row while TMDB is on, so the rating chip
+/// appearing never reflows the tags or changes the row height (no layout
+/// jump).
+const _ratingSlotWidth = 56.0, _ratingSlotHeight = 22.0;
 
-  void _open() => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => VodPlayerPage(queue: [widget.movie], index: 0),
-    ),
-  );
+class _MovieCardState extends ConsumerState<MovieCard> {
+  bool _active = false;
+  final _focus = FocusNode(debugLabel: 'MovieCard');
+
+  /// The expandable list this card is in, if any.
+  ExpandableItem? _item;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final item = _item = ExpandableItem.of(context);
+    // Its panel was closed with Esc or the close button: focus comes back.
+    if (item != null && item.expansion.takeFocusBack(item.itemKey)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focus.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  /// Whether a tap opens the details panel instead of the player.
+  bool get _toDetails =>
+      widget.open == MovieOpen.details &&
+      _item != null &&
+      ref.read(tmdbEnabledProvider);
+
+  void _open() {
+    if (_toDetails) {
+      _item!.toggle();
+    } else {
+      Navigator.of(context).push(moviePlayerRoute(ref, widget.movie));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final m = widget.movie;
     final t = parseMovieTitle(m.name);
+    final tmdb = ref.watch(tmdbEnabledProvider);
+    // Only a card that is built asks TMDB; lazy grids build visible ones.
+    final info = tmdb
+        ? ref.watch(tmdbMovieProvider(tmdbMovieQuery(m.name))).value
+        : null;
+    final poster = posterUrl(m.logo, info, TmdbImageSize.card);
     final reduce = MediaQuery.of(context).disableAnimations;
-    return FocusableActionDetector(
+    final card = FocusableActionDetector(
+      focusNode: _focus,
       onShowFocusHighlight: (v) => setState(() => _active = v),
       onShowHoverHighlight: (v) => setState(() => _active = v),
       actions: {
@@ -70,11 +134,11 @@ class _MovieCardState extends State<MovieCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (m.logo.isNotEmpty)
+                if (poster.isNotEmpty)
                   Opacity(
                     opacity: 0.35,
                     child: CachedThumb(
-                      url: m.logo,
+                      url: poster,
                       cacheWidth: 420,
                       fallback: const SizedBox.shrink(),
                     ),
@@ -97,20 +161,37 @@ class _MovieCardState extends State<MovieCard> {
                           ),
                         ),
                       ),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (t.year != null)
-                            Text(
-                              '${t.year}',
-                              style: const TextStyle(
-                                color: Tokens.textDim,
-                                fontSize: 13,
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                if (t.year != null)
+                                  Text(
+                                    '${t.year}',
+                                    style: const TextStyle(
+                                      color: Tokens.textDim,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                for (final tag in t.tags) MovieTag(tag),
+                              ],
+                            ),
+                          ),
+                          if (tmdb)
+                            SizedBox(
+                              width: _ratingSlotWidth,
+                              height: _ratingSlotHeight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: RatingChip(rating: info?.rating),
                               ),
                             ),
-                          for (final tag in t.tags) _Tag(tag),
                         ],
                       ),
                       if (widget.progress != null) ...[
@@ -137,23 +218,8 @@ class _MovieCardState extends State<MovieCard> {
         ),
       ),
     );
+    final expandable =
+        tmdb && widget.open == MovieOpen.details && _item != null;
+    return Semantics(expanded: expandable ? _item!.isOpen : null, child: card);
   }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-    decoration: BoxDecoration(
-      border: Border.all(color: Tokens.line),
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(color: Tokens.textDim, fontSize: 11),
-    ),
-  );
 }

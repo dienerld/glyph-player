@@ -5,6 +5,7 @@ import 'natural_compare.dart';
 import 'series_title.dart';
 import 'stream_entry.dart';
 import 'title_fold.dart';
+import 'tmdb_info.dart';
 
 class GroupCount {
   const GroupCount(this.name, this.count);
@@ -87,6 +88,11 @@ CREATE TABLE IF NOT EXISTS continue_hidden(
 CREATE TABLE IF NOT EXISTS recents(
   type TEXT NOT NULL, id TEXT NOT NULL, watched_at INTEGER NOT NULL,
   PRIMARY KEY(type, id));
+CREATE TABLE IF NOT EXISTS tmdb_cache(
+  kind TEXT NOT NULL, title_key TEXT NOT NULL, year INTEGER NOT NULL,
+  tmdb_id INTEGER, poster TEXT, rating REAL, overview TEXT NOT NULL DEFAULT '',
+  fetched_at INTEGER NOT NULL,
+  PRIMARY KEY(kind, title_key, year));
 ''';
 
 /// How many recently watched channels are kept per type; older ones fall off.
@@ -619,6 +625,60 @@ class Db {
       Progress(r.first['position_ms'] as int, r.first['duration_ms'] as int),
     );
   }
+
+  /// The cached TMDB lookup for [titleKey] (see [tmdbTitleKey]) of [kind]
+  /// ([TmdbKind]), whatever its age; null when never looked up. [year] 0
+  /// means unknown.
+  TmdbCached? tmdbCached(TmdbKind kind, String titleKey, {int year = 0}) {
+    final r = _db.select(
+      'SELECT tmdb_id, poster, rating, overview, fetched_at FROM tmdb_cache '
+      'WHERE kind=? AND title_key=? AND year=?',
+      [kind.name, titleKey, year],
+    );
+    if (r.isEmpty) return null;
+    final row = r.first;
+    final id = row['tmdb_id'] as int?;
+    return TmdbCached(
+      id == null
+          ? null
+          : TmdbInfo(
+              id: id,
+              posterPath: row['poster'] as String?,
+              rating: (row['rating'] as num?)?.toDouble(),
+              overview: row['overview'] as String,
+            ),
+      DateTime.fromMillisecondsSinceEpoch(row['fetched_at'] as int),
+    );
+  }
+
+  /// Stores a TMDB answer: [info], or null for "not found".
+  void putTmdb(
+    TmdbKind kind,
+    String titleKey,
+    TmdbInfo? info,
+    DateTime at, {
+    int year = 0,
+  }) => _db.execute(
+    'INSERT INTO tmdb_cache'
+    '(kind,title_key,year,tmdb_id,poster,rating,overview,fetched_at) '
+    'VALUES(?,?,?,?,?,?,?,?) '
+    'ON CONFLICT(kind,title_key,year) DO UPDATE SET tmdb_id=excluded.tmdb_id, '
+    'poster=excluded.poster, rating=excluded.rating, '
+    'overview=excluded.overview, fetched_at=excluded.fetched_at',
+    [
+      kind.name,
+      titleKey,
+      year,
+      info?.id,
+      info?.posterPath,
+      info?.rating,
+      info?.overview ?? '',
+      at.millisecondsSinceEpoch,
+    ],
+  );
+
+  /// Forgets every TMDB answer (Settings, "Limpar cache").
+  void clearTmdbCache() => _db.execute('DELETE FROM tmdb_cache');
 
   Channel _channel(Row r) => Channel(
     type: r['type'] as String,

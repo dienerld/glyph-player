@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/resume.dart';
 import '../../data/series_nav.dart';
+import '../../data/tmdb_info.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../movies/vod_player_page.dart';
+import '../shared/tmdb_display.dart';
 import 'series_card.dart';
 
 class SeriesPage extends ConsumerStatefulWidget {
@@ -42,6 +44,8 @@ class _SeriesPageState extends ConsumerState<SeriesPage> {
     final db = ref.watch(dbProvider);
     final episodes = ref.watch(seriesEpisodesProvider((_s.group, _s.name)));
     final fav = db.isSeriesFavorite(_s.group, _s.name);
+    final tmdbInfo = ref.watch(tmdbSeriesProvider(_s.name)).value;
+    final overview = tmdbInfo?.overview.trim() ?? '';
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -97,24 +101,57 @@ class _SeriesPageState extends ConsumerState<SeriesPage> {
                       height: 180,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(Tokens.radius),
-                        child: Poster(url: _s.poster, name: _s.name),
+                        child: Poster(
+                          url: posterUrl(
+                            _s.poster,
+                            tmdbInfo,
+                            TmdbImageSize.card,
+                          ),
+                          name: _s.name,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${distributorLabel(_s.group)} · ${seasonsLabel(_s.seasons)} · ${_s.episodes} episódios',
-                          style: const TextStyle(color: Tokens.textDim),
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          icon: const Icon(Icons.play_arrow),
-                          label: Text(lw == null ? 'Assistir' : 'Continuar'),
-                          onPressed: () => _play(eps, target),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                '${distributorLabel(_s.group)} · ${seasonsLabel(_s.seasons)} · ${_s.episodes} episódios',
+                                style: const TextStyle(color: Tokens.textDim),
+                              ),
+                              RatingChip(rating: tmdbInfo?.rating),
+                            ],
+                          ),
+                          if (overview.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              child: Text(
+                                overview,
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Tokens.text,
+                                  fontSize: 14,
+                                  height: 20 / 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            icon: const Icon(Icons.play_arrow),
+                            label: Text(lw == null ? 'Assistir' : 'Continuar'),
+                            onPressed: () => _play(eps, target),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -1,8 +1,10 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import 'content_filter.dart';
 import 'natural_compare.dart';
 import 'series_title.dart';
 import 'stream_entry.dart';
+import 'title_fold.dart';
 
 class GroupCount {
   const GroupCount(this.name, this.count);
@@ -46,7 +48,15 @@ class Channel {
   final String type, id, name, group, logo, url;
 }
 
-const _schema = '''
+/// Title search: `title` feeds the trigram index (substring search); `norm`
+/// is the title folded by [foldTitle], for prefix search with LIKE.
+const _titlesTable = '''
+CREATE VIRTUAL TABLE IF NOT EXISTS titles_fts USING fts5(
+  title, kind UNINDEXED, grp UNINDEXED, last UNINDEXED, norm UNINDEXED,
+  tokenize='trigram remove_diacritics 1');''';
+
+const _schema =
+    '''
 CREATE TABLE IF NOT EXISTS streams(
   type TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, grp TEXT NOT NULL,
   logo TEXT NOT NULL, url TEXT NOT NULL, run INTEGER NOT NULL,
@@ -57,6 +67,7 @@ CREATE INDEX IF NOT EXISTS streams_type_grp ON streams(type, grp);
 CREATE VIRTUAL TABLE IF NOT EXISTS streams_fts USING fts5(
   name, content='streams', content_rowid='rowid',
   tokenize='unicode61 remove_diacritics 2');
+$_titlesTable
 CREATE TABLE IF NOT EXISTS favorites(
   type TEXT NOT NULL, id TEXT NOT NULL, PRIMARY KEY(type, id));
 CREATE TABLE IF NOT EXISTS settings(
@@ -87,10 +98,63 @@ const _summaryCols =
 
 const _cols = 's.type, s.id, s.name, s.grp, s.logo, s.url';
 
+/// Order of a movie or series category grid. [recent] is newest imported
+/// first: upserts keep a row's rowid, so new items carry the highest ones.
+enum SortOrder { recent, az, za }
+
+/// Items per page in the movie and series category grids.
+const gridPageSize = 60;
+
+String _movieOrder(SortOrder o) => switch (o) {
+  SortOrder.recent => 's.rowid DESC',
+  SortOrder.az => 's.name COLLATE NOCASE ASC, s.rowid ASC',
+  SortOrder.za => 's.name COLLATE NOCASE DESC, s.rowid DESC',
+};
+
+String _seriesOrder(SortOrder o) => switch (o) {
+  SortOrder.recent => 'MAX(s.rowid) DESC',
+  SortOrder.az => 's.series_name COLLATE NOCASE ASC, MIN(s.rowid) ASC',
+  SortOrder.za => 's.series_name COLLATE NOCASE DESC, MIN(s.rowid) DESC',
+};
+
+/// The `titles_fts` condition for a title search and its argument, or null
+/// for an empty [query]. One or two characters match the start of the title
+/// (the trigram index needs three); more match anywhere in it. Both ignore
+/// case and accents, and treat FTS and LIKE operators as plain text.
+(String, String)? _titleFilter(String query) {
+  final t = query.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (t.isEmpty) return null;
+  if (t.runes.length < 3) {
+    final like = foldTitle(
+      t,
+    ).replaceAllMapped(RegExp(r'[\\%_]'), (m) => '\\${m[0]}');
+    return ("norm LIKE ? ESCAPE '\\'", '$like%');
+  }
+  return ('titles_fts MATCH ?', '"${t.replaceAll('"', '""')}"');
+}
+
+/// Excludes the groups [isAdultGroup] flags (LIKE is case-insensitive).
+String _notAdult(String column) =>
+    adultGroupWords.map((w) => "$column NOT LIKE '%$w%'").join(' AND ');
+
+/// [_seriesOrder] over `titles_fts` rows, whose rowid is a series' first
+/// episode and `last` its newest one.
+String _titleOrder(SortOrder o) => switch (o) {
+  SortOrder.recent => 'last DESC',
+  SortOrder.az => 'title COLLATE NOCASE ASC, rowid ASC',
+  SortOrder.za => 'title COLLATE NOCASE DESC, rowid DESC',
+};
+
 class Db {
   Db._(this._db) {
     _db.execute(
       'PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=NORMAL;',
+    );
+    _db.createFunction(
+      functionName: 'fold_title',
+      function: (args) => foldTitle(args[0] as String),
+      argumentCount: const AllowedArgumentCount(1),
+      deterministic: true,
     );
     _db.execute(_schema);
     _migrate();
@@ -146,7 +210,51 @@ class Db {
     _db.execute(
       'CREATE INDEX IF NOT EXISTS streams_series ON streams(type, grp, series_name)',
     );
+    final titleCols = _db
+        .select('PRAGMA table_info(titles_fts)')
+        .map((r) => r['name'] as String)
+        .toSet();
+    if (!titleCols.contains('norm')) {
+      // Built before prefix search: recreate it, the check below refills it.
+      _db.execute('DROP TABLE titles_fts');
+      _db.execute(_titlesTable);
+    }
+    final titlesEmpty = _db.select('SELECT 1 FROM titles_fts LIMIT 1').isEmpty;
+    if (titlesEmpty &&
+        _db
+            .select(
+              "SELECT 1 FROM streams WHERE type IN ('movie','series') LIMIT 1",
+            )
+            .isNotEmpty) {
+      _rebuildTitles();
+    }
     _db.execute('PRAGMA user_version = 1');
+  }
+
+  /// Refills the title index: one row per movie and one per (group, series),
+  /// not per episode. Every rowid is a `streams` rowid, the movie's own or a
+  /// series' first episode (`last` holds its newest), so movies join by rowid
+  /// and series by (grp, title), and series can be paged in the index alone.
+  void _rebuildTitles() {
+    _db.execute('BEGIN');
+    try {
+      _db.execute('DELETE FROM titles_fts');
+      _db.execute(
+        "INSERT INTO titles_fts(rowid, title, kind, grp, last, norm) "
+        "SELECT rowid, name, 'movie', '', rowid, fold_title(name) "
+        "FROM streams WHERE type='movie'",
+      );
+      _db.execute(
+        "INSERT INTO titles_fts(rowid, title, kind, grp, last, norm) "
+        "SELECT MIN(rowid), series_name, 'series', grp, MAX(rowid), "
+        "fold_title(series_name) "
+        "FROM streams WHERE type='series' GROUP BY grp, series_name",
+      );
+      _db.execute('COMMIT');
+    } catch (_) {
+      _db.execute('ROLLBACK');
+      rethrow;
+    }
   }
 
   int streamCount() =>
@@ -192,11 +300,12 @@ class Db {
     }
   }
 
-  /// Drops rows not seen in [run] and rebuilds the search index. Call only
+  /// Drops rows not seen in [run] and rebuilds the search indexes. Call only
   /// after a fully successful import.
   void finishRun(int run) {
     _db.execute('DELETE FROM streams WHERE run <> ?', [run]);
     _db.execute("INSERT INTO streams_fts(streams_fts) VALUES('rebuild')");
+    _rebuildTitles();
   }
 
   List<GroupCount> groups(String type) => _db
@@ -212,6 +321,40 @@ class Db {
     "SELECT $_cols FROM streams s WHERE s.type=? AND s.grp=? ORDER BY s.rowid",
     [type, group],
   )..sort((a, b) => naturalCompare(a.name, b.name));
+
+  /// One page of movies: of [group], or of every category when null. A
+  /// non-empty [query] keeps only matching titles: one or two characters
+  /// match the start of the name, more match anywhere in it, ignoring case
+  /// and accents. [hideAdult] drops the groups [isAdultGroup] flags.
+  List<Channel> moviesPage(
+    String? group,
+    SortOrder order, {
+    String query = '',
+    bool hideAdult = false,
+    int limit = gridPageSize,
+    int offset = 0,
+  }) {
+    final where = ["s.type='movie'"];
+    final args = <Object?>[];
+    if (group != null) {
+      where.add('s.grp=?');
+      args.add(group);
+    }
+    if (hideAdult) where.add(_notAdult('s.grp'));
+    final title = _titleFilter(query);
+    if (title != null) {
+      where.add(
+        "s.rowid IN (SELECT rowid FROM titles_fts "
+        "WHERE ${title.$1} AND kind='movie')",
+      );
+      args.add(title.$2);
+    }
+    return _channels(
+      "SELECT $_cols FROM streams s WHERE ${where.join(' AND ')} "
+      "ORDER BY ${_movieOrder(order)} LIMIT ? OFFSET ?",
+      [...args, limit, offset],
+    );
+  }
 
   List<Channel> search(String type, String text, {int limit = 60}) {
     final tokens = text
@@ -353,11 +496,51 @@ class Db {
       )
       .toList();
 
-  List<SeriesSummary> seriesIn(String group) => _summaries(
-    "SELECT $_summaryCols FROM streams s WHERE s.type='series' AND s.grp=? "
-    "GROUP BY s.series_name ORDER BY s.series_name COLLATE NOCASE",
-    [group],
-  );
+  /// One page of series, one entry per (group, series): of [group], or of
+  /// every category when null. [query] matches the series name (not episode
+  /// titles) like in [moviesPage]; [hideAdult] likewise.
+  List<SeriesSummary> seriesPage(
+    String? group,
+    SortOrder order, {
+    String query = '',
+    bool hideAdult = false,
+    int limit = gridPageSize,
+    int offset = 0,
+  }) {
+    final title = _titleFilter(query);
+    if (title != null) {
+      // Pages in the index first, so only the page's episodes are summed.
+      final where = [title.$1, "kind='series'"];
+      final args = <Object?>[title.$2];
+      if (group != null) {
+        where.add('grp=?');
+        args.add(group);
+      }
+      if (hideAdult) where.add(_notAdult('grp'));
+      return _summaries(
+        "WITH page AS (SELECT grp AS g, title AS n FROM titles_fts "
+        "WHERE ${where.join(' AND ')} ORDER BY ${_titleOrder(order)} "
+        "LIMIT ? OFFSET ?) "
+        "SELECT $_summaryCols FROM page JOIN streams s "
+        "ON s.type='series' AND s.grp=page.g AND s.series_name=page.n "
+        "GROUP BY s.grp, s.series_name ORDER BY ${_seriesOrder(order)}",
+        [...args, limit, offset],
+      );
+    }
+    final where = ["s.type='series'"];
+    final args = <Object?>[];
+    if (group != null) {
+      where.add('s.grp=?');
+      args.add(group);
+    }
+    if (hideAdult) where.add(_notAdult('s.grp'));
+    return _summaries(
+      "SELECT $_summaryCols FROM streams s WHERE ${where.join(' AND ')} "
+      "GROUP BY s.grp, s.series_name ORDER BY ${_seriesOrder(order)} "
+      "LIMIT ? OFFSET ?",
+      [...args, limit, offset],
+    );
+  }
 
   int seriesCount(String group) =>
       _db.select(

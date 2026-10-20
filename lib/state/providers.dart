@@ -86,6 +86,190 @@ final liveViewProvider = NotifierProvider<LiveViewNotifier, LiveView>(
   LiveViewNotifier.new,
 );
 
+/// Sort order of a category grid, remembered per kind. Defaults to A-Z.
+class SortNotifier extends Notifier<SortOrder> {
+  SortNotifier(this._key);
+  final String _key;
+
+  @override
+  SortOrder build() {
+    final saved = ref.read(dbProvider).setting(_key);
+    return SortOrder.values.firstWhere(
+      (o) => o.name == saved,
+      orElse: () => SortOrder.az,
+    );
+  }
+
+  void set(SortOrder value) {
+    ref.read(dbProvider).setSetting(_key, value.name);
+    state = value;
+  }
+}
+
+final movieSortProvider = NotifierProvider<SortNotifier, SortOrder>(
+  () => SortNotifier('movie_sort'),
+);
+final seriesSortProvider = NotifierProvider<SortNotifier, SortOrder>(
+  () => SortNotifier('series_sort'),
+);
+
+/// Items loaded so far in a category grid.
+class Paged<T> {
+  const Paged(this.items, {required this.hasMore, this.loading = false});
+  final List<T> items;
+
+  /// Whether another page may exist; false once a short page came back.
+  final bool hasMore;
+
+  /// A [PagedNotifier.loadMore] is in flight.
+  final bool loading;
+}
+
+/// What a movie or series grid shows: one category or all of them ([group]
+/// null), optionally narrowed by a title [query]. Value-equal, so it keys the
+/// paged providers.
+///
+/// - one category: `GridScope.group('Ação')`
+/// - search everywhere: `GridScope.search(text)`
+/// - search one category: `GridScope.search(text, group: 'Ação')`
+class GridScope {
+  const GridScope({this.group, this.query = ''});
+
+  const GridScope.group(String this.group) : query = '';
+
+  /// Trims [text], so surrounding spaces map to the same scope.
+  factory GridScope.search(String text, {String? group}) =>
+      GridScope(group: group, query: text.trim());
+
+  /// Null for every category.
+  final String? group;
+
+  /// Title filter; empty for none. One or two characters match the start of
+  /// a title, more match anywhere in it.
+  final String query;
+
+  /// Whether [query] narrows the results.
+  bool get searching => query.trim().isNotEmpty;
+
+  @override
+  bool operator ==(Object other) =>
+      other is GridScope && other.group == group && other.query == query;
+
+  @override
+  int get hashCode => Object.hash(group, query);
+
+  @override
+  String toString() => 'GridScope(group: $group, query: $query)';
+}
+
+/// A movie or series grid loaded page by page ([gridPageSize] at a time).
+/// Starts over from the first page when the sort order or the adult filter
+/// changes. Adult groups are left out unless the user opts in.
+abstract class PagedNotifier<T>
+    extends AutoDisposeFamilyAsyncNotifier<Paged<T>, GridScope> {
+  ProviderListenable<SortOrder> get _sort;
+  List<T> _fetch(
+    Db db,
+    GridScope scope,
+    SortOrder order,
+    int offset, {
+    required bool hideAdult,
+  });
+
+  /// Bumped on every rebuild and on dispose, so a loadMore started before
+  /// either never writes stale items.
+  int _gen = 0;
+
+  @override
+  Future<Paged<T>> build(GridScope scope) async {
+    _gen++;
+    ref.onDispose(() => _gen++);
+    final order = ref.watch(_sort);
+    final hideAdult = !ref.watch(showAdultProvider);
+    final page = _fetch(
+      ref.read(dbProvider),
+      scope,
+      order,
+      0,
+      hideAdult: hideAdult,
+    );
+    return Paged(page, hasMore: page.length >= gridPageSize);
+  }
+
+  /// Appends the next page. No-op while loading, before the first page, or
+  /// when nothing is left.
+  Future<void> loadMore() async {
+    final cur = state.valueOrNull;
+    if (cur == null || cur.loading || !cur.hasMore) return;
+    final gen = _gen;
+    state = AsyncData(Paged(cur.items, hasMore: true, loading: true));
+    await Future<void>.delayed(Duration.zero); // let the grid show it
+    if (gen != _gen) return;
+    final next = _fetch(
+      ref.read(dbProvider),
+      arg,
+      ref.read(_sort),
+      cur.items.length,
+      hideAdult: !ref.read(showAdultProvider),
+    );
+    state = AsyncData(
+      Paged([...cur.items, ...next], hasMore: next.length >= gridPageSize),
+    );
+  }
+}
+
+class MoviesPageNotifier extends PagedNotifier<Channel> {
+  @override
+  ProviderListenable<SortOrder> get _sort => movieSortProvider;
+
+  @override
+  List<Channel> _fetch(
+    Db db,
+    GridScope scope,
+    SortOrder order,
+    int offset, {
+    required bool hideAdult,
+  }) => db.moviesPage(
+    scope.group,
+    order,
+    query: scope.query,
+    hideAdult: hideAdult,
+    offset: offset,
+  );
+}
+
+class SeriesPageNotifier extends PagedNotifier<SeriesSummary> {
+  @override
+  ProviderListenable<SortOrder> get _sort => seriesSortProvider;
+
+  @override
+  List<SeriesSummary> _fetch(
+    Db db,
+    GridScope scope,
+    SortOrder order,
+    int offset, {
+    required bool hideAdult,
+  }) => db.seriesPage(
+    scope.group,
+    order,
+    query: scope.query,
+    hideAdult: hideAdult,
+    offset: offset,
+  );
+}
+
+/// Movies of a [GridScope].
+final moviesPageProvider = AsyncNotifierProvider.autoDispose
+    .family<MoviesPageNotifier, Paged<Channel>, GridScope>(
+      MoviesPageNotifier.new,
+    );
+
+/// Series of a [GridScope], one entry per (group, series).
+final seriesPageProvider = AsyncNotifierProvider.autoDispose
+    .family<SeriesPageNotifier, Paged<SeriesSummary>, GridScope>(
+      SeriesPageNotifier.new,
+    );
+
 /// Adult groups are hidden unless the user opts in (Settings).
 final showAdultProvider = NotifierProvider<ShowAdultNotifier, bool>(
   ShowAdultNotifier.new,
@@ -130,9 +314,6 @@ final movieGroupsProvider = FutureProvider<List<GroupCount>>((ref) async {
       .where((g) => show || !isAdultGroup(g.name))
       .toList();
 });
-final moviesInProvider = FutureProvider.family<List<Channel>, String>(
-  (ref, group) async => ref.watch(dbProvider).channels('movie', group),
-);
 final continueWatchingProvider = FutureProvider<List<Channel>>(
   (ref) async => _visible(
     ref.watch(dbProvider).continueWatching(),
@@ -148,9 +329,6 @@ final seriesSectionsProvider = FutureProvider<List<GroupCount>>((ref) async {
       .where((g) => show || !isAdultGroup(g.name))
       .toList();
 });
-final seriesInProvider = FutureProvider.family<List<SeriesSummary>, String>(
-  (ref, group) async => ref.watch(dbProvider).seriesIn(group),
-);
 final seriesEpisodesProvider =
     FutureProvider.family<List<Episode>, (String, String)>(
       (ref, key) async => ref.watch(dbProvider).episodes(key.$1, key.$2),
@@ -237,11 +415,11 @@ class ImportController extends Notifier<ImportState> {
       ref
         ..invalidate(liveGroupsProvider)
         ..invalidate(movieGroupsProvider)
-        ..invalidate(moviesInProvider)
+        ..invalidate(moviesPageProvider)
         ..invalidate(continueWatchingProvider)
         ..invalidate(searchProvider)
         ..invalidate(seriesSectionsProvider)
-        ..invalidate(seriesInProvider)
+        ..invalidate(seriesPageProvider)
         ..invalidate(seriesEpisodesProvider)
         ..invalidate(seriesFavoritesProvider)
         ..invalidate(continueSeriesProvider)

@@ -1,6 +1,6 @@
 # Changelog
 
-## Não lançado
+## 0.5.0 - 2026-10-20
 
 - **Ordenação de filmes e séries:** seletor nas categorias com Adicionados recentes, A → Z e Z → A. A escolha fica salva.
 - **Grades carregam aos poucos:** filmes e séries mostram 60 itens por vez e carregam mais conforme a rolagem, em vez de carregar a categoria inteira.

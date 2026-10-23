@@ -9,6 +9,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../../data/database.dart';
 import '../../data/movie_title.dart';
 import '../../data/resume.dart';
+import '../../player/mpv_player.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../series/auto_advance_overlay.dart';
@@ -38,7 +39,7 @@ class VodPlayerPage extends ConsumerStatefulWidget {
 }
 
 class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
-  final Player _player = Player();
+  final Player _player = createPlayer();
   late final VideoController _video = VideoController(_player);
   final _videoKey = GlobalKey<VideoState>();
   late final Db _db = ref.read(dbProvider);

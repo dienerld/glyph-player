@@ -1,5 +1,9 @@
 # Changelog
 
+## Não lançado
+
+- **Transmissões não travam mais quando a rede oscila:** o player esperava só 5 segundos por dados do servidor. Se a pausa passasse disso, o ao vivo congelava no último quadro e não voltava, e filmes ou episódios contavam como terminados. Agora ele espera até 60 segundos e continua de onde parou.
+
 ## 0.5.0 - 2026-10-20
 
 - **Ordenação de filmes e séries:** seletor nas categorias com Adicionados recentes, A → Z e Z → A. A escolha fica salva.

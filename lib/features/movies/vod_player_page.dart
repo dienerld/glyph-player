@@ -9,7 +9,9 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../../data/database.dart';
 import '../../data/movie_title.dart';
 import '../../data/resume.dart';
+import '../../player/loading_controls.dart';
 import '../../player/mpv_player.dart';
+import '../../player/player_startup.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../series/auto_advance_overlay.dart';
@@ -41,6 +43,10 @@ class VodPlayerPage extends ConsumerStatefulWidget {
 class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   final Player _player = createPlayer();
   late final VideoController _video = VideoController(_player);
+  late final PlayerStartup _startup = PlayerStartup.of(_player);
+  late final VideoControlsBuilder _videoControls = loadingVideoControls(
+    _startup,
+  );
   final _videoKey = GlobalKey<VideoState>();
   late final Db _db = ref.read(dbProvider);
   late int _index = widget.index;
@@ -77,7 +83,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     if (item.type == 'series') {
       _db.touchProgress(item.type, item.id, DateTime.now());
     }
-    await _player.open(Media(item.url));
+    await _startup.open(item.url);
     if (saved == null) return;
     final at = resumePosition(saved.positionMs, saved.durationMs);
     if (at == null) return;
@@ -173,6 +179,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     _positionSub?.cancel();
     _cursor.dispose();
     _save();
+    _startup.dispose();
     _player.dispose();
     super.dispose();
   }
@@ -213,6 +220,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     );
     final hasEpisodes = widget.nextOf != null || widget.previousOf != null;
     return MaterialDesktopVideoControlsThemeData(
+      bufferingIndicatorBuilder: noBufferingIndicator,
       automaticallyImplySkipNextButton: false,
       automaticallyImplySkipPreviousButton: false,
       buttonBarButtonColor: Tokens.text,
@@ -308,7 +316,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
                 child: Video(
                   key: _videoKey,
                   controller: _video,
-                  controls: MaterialDesktopVideoControls,
+                  controls: _videoControls,
                 ),
               ),
             ),

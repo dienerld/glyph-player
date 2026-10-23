@@ -9,7 +9,9 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../data/database.dart';
 import '../state/providers.dart';
 import '../ui/theme.dart';
+import 'loading_controls.dart';
 import 'mpv_player.dart';
+import 'player_startup.dart';
 
 const _panelWidth = 320.0;
 const _seekStep = Duration(seconds: 10);
@@ -32,6 +34,10 @@ class PlayerPage extends ConsumerStatefulWidget {
 class _PlayerPageState extends ConsumerState<PlayerPage> {
   late final Player _player = createPlayer();
   late final VideoController _video = VideoController(_player);
+  late final PlayerStartup _startup = PlayerStartup.of(_player);
+  late final VideoControlsBuilder _videoControls = loadingVideoControls(
+    _startup,
+  );
   final _videoKey = GlobalKey<VideoState>();
   late int _index = widget.index;
   bool _panel = false;
@@ -61,7 +67,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   void _open() {
     final c = _current;
     _seekable = false; // re-detected from the new stream's duration
-    _player.open(Media(c.url));
+    _startup.open(c.url);
     ref.read(dbProvider).markWatched(c.type, c.id, DateTime.now());
     // Riverpod forbids invalidating from initState; refresh after the frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -97,6 +103,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     _hide?.cancel();
     _edge?.cancel();
     _durationSub?.cancel();
+    _startup.dispose();
     _player.dispose();
     super.dispose();
   }
@@ -131,6 +138,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       ),
     );
     return MaterialDesktopVideoControlsThemeData(
+      bufferingIndicatorBuilder: noBufferingIndicator,
       displaySeekBar: _seekable,
       seekBarMargin: barMargin,
       automaticallyImplySkipNextButton: false,
@@ -206,7 +214,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     child: Video(
                       key: _videoKey,
                       controller: _video,
-                      controls: MaterialDesktopVideoControls,
+                      controls: _videoControls,
                     ),
                   ),
                 ),

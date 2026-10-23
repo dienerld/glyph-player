@@ -2,6 +2,8 @@
 
 ## Não lançado
 
+- **Indicador de carregamento no player:** ao abrir ou trocar de canal, filme ou episódio, um círculo de carregamento aparece no lugar da tela preta até o vídeo começar, e volta se a transmissão parar para carregar. Também aparece em tela cheia.
+- **Nova tentativa automática ao abrir:** se o servidor recusar a conexão ou não começar a mandar o vídeo em 15 segundos, o player tenta de novo, até 3 vezes, e mostra na tela qual tentativa está em andamento. Se as 3 falharem, aparece o aviso "Não foi possível abrir" com o botão **Tentar de novo**.
 - **Transmissões não travam mais quando a rede oscila:** o player esperava só 5 segundos por dados do servidor. Se a pausa passasse disso, o ao vivo congelava no último quadro e não voltava, e filmes ou episódios contavam como terminados. Agora ele espera até 60 segundos e continua de onde parou.
 
 ## 0.5.0 - 2026-10-20

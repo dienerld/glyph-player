@@ -11,7 +11,7 @@ import '../../data/movie_title.dart';
 import '../../data/resume.dart';
 import '../../player/loading_controls.dart';
 import '../../player/mpv_player.dart';
-import '../../player/player_startup.dart';
+import '../../player/player_connection.dart';
 import '../../state/providers.dart';
 import '../../ui/theme.dart';
 import '../series/auto_advance_overlay.dart';
@@ -43,9 +43,9 @@ class VodPlayerPage extends ConsumerStatefulWidget {
 class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
   final Player _player = createPlayer();
   late final VideoController _video = VideoController(_player);
-  late final PlayerStartup _startup = PlayerStartup.of(_player);
+  late final PlayerConnection _connection = PlayerConnection.of(_player);
   late final VideoControlsBuilder _videoControls = loadingVideoControls(
-    _startup,
+    _connection,
   );
   final _videoKey = GlobalKey<VideoState>();
   late final Db _db = ref.read(dbProvider);
@@ -83,7 +83,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     if (item.type == 'series') {
       _db.touchProgress(item.type, item.id, DateTime.now());
     }
-    await _startup.open(item.url);
+    await _connection.open(item.url);
     if (saved == null) return;
     final at = resumePosition(saved.positionMs, saved.durationMs);
     if (at == null) return;
@@ -179,7 +179,7 @@ class _VodPlayerPageState extends ConsumerState<VodPlayerPage> {
     _positionSub?.cancel();
     _cursor.dispose();
     _save();
-    _startup.dispose();
+    _connection.dispose();
     _player.dispose();
     super.dispose();
   }

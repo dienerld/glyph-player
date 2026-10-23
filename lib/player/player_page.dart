@@ -11,7 +11,7 @@ import '../state/providers.dart';
 import '../ui/theme.dart';
 import 'loading_controls.dart';
 import 'mpv_player.dart';
-import 'player_startup.dart';
+import 'player_connection.dart';
 
 const _panelWidth = 320.0;
 const _seekStep = Duration(seconds: 10);
@@ -34,9 +34,9 @@ class PlayerPage extends ConsumerStatefulWidget {
 class _PlayerPageState extends ConsumerState<PlayerPage> {
   late final Player _player = createPlayer();
   late final VideoController _video = VideoController(_player);
-  late final PlayerStartup _startup = PlayerStartup.of(_player);
+  late final PlayerConnection _connection = PlayerConnection.of(_player);
   late final VideoControlsBuilder _videoControls = loadingVideoControls(
-    _startup,
+    _connection,
   );
   final _videoKey = GlobalKey<VideoState>();
   late int _index = widget.index;
@@ -67,7 +67,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   void _open() {
     final c = _current;
     _seekable = false; // re-detected from the new stream's duration
-    _startup.open(c.url);
+    _connection.open(c.url);
     ref.read(dbProvider).markWatched(c.type, c.id, DateTime.now());
     // Riverpod forbids invalidating from initState; refresh after the frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -103,7 +103,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     _hide?.cancel();
     _edge?.cancel();
     _durationSub?.cancel();
-    _startup.dispose();
+    _connection.dispose();
     _player.dispose();
     super.dispose();
   }

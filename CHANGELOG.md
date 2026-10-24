@@ -1,6 +1,6 @@
 # Changelog
 
-## Não lançado
+## 0.6.0 - 2026-10-24
 
 - **Versões de um canal ficam juntas:** "ESPN FHD" e "ESPN H265" não vão mais para depois de "ESPN 10". Cada canal aparece seguido das suas versões, na ordem SD, HD, FHD, 4K e H265, e as marcadas com [L] vêm por último.
 

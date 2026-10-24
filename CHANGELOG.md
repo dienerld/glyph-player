@@ -2,6 +2,8 @@
 
 ## Não lançado
 
+- **Versões de um canal ficam juntas:** "ESPN FHD" e "ESPN H265" não vão mais para depois de "ESPN 10". Cada canal aparece seguido das suas versões, na ordem SD, HD, FHD, 4K e H265, e as marcadas com [L] vêm por último.
+
 - **Indicador de carregamento no player:** ao abrir ou trocar de canal, filme ou episódio, um círculo de carregamento aparece no lugar da tela preta até o vídeo começar, e volta se a transmissão parar para carregar. Também aparece em tela cheia.
 - **Nova tentativa automática ao abrir:** se o servidor recusar a conexão ou não começar a mandar o vídeo em 15 segundos, o player tenta de novo, até 3 vezes, e mostra na tela qual tentativa está em andamento. Se as 3 falharem, aparece o aviso "Não foi possível abrir" com o botão **Tentar de novo**.
 - **Reconexão automática no ao vivo:** se a transmissão cair, congelar ou ficar repetindo o mesmo trecho por 15 segundos, o player reconecta sozinho, com até 3 tentativas mostradas na tela ("Reconectando: tentativa 1 de 3"). Pausar não dispara a reconexão, e filmes e séries não são afetados.

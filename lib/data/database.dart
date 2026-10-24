@@ -322,11 +322,12 @@ class Db {
       .map((r) => GroupCount(r['grp'] as String, r['n'] as int))
       .toList();
 
-  /// A group's channels in natural name order (`Canal 2` before `Canal 10`).
+  /// A group's channels in natural name order (`Canal 2` before `Canal 10`),
+  /// with each channel's quality variants kept together ([channelCompare]).
   List<Channel> channels(String type, String group) => _channels(
     "SELECT $_cols FROM streams s WHERE s.type=? AND s.grp=? ORDER BY s.rowid",
     [type, group],
-  )..sort((a, b) => naturalCompare(a.name, b.name));
+  )..sort((a, b) => channelCompare(a.name, b.name));
 
   /// One page of movies: of [group], or of every category when null. A
   /// non-empty [query] keeps only matching titles: one or two characters

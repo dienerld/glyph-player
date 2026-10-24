@@ -18,7 +18,7 @@ flutter build linux --release          # depois: linux/install_desktop.sh
 - `lib/data/`: parser M3U, `database.dart` (SQLite + FTS5; `Db.setting/setSetting` guarda as preferências), importador em Isolate, `updater.dart` (verifica e aplica atualização), `natural_compare.dart`.
 - `lib/state/providers.dart`: todos os providers Riverpod. Lista nova que depende da importação precisa entrar na lista de `invalidate` do `ImportController`.
 - `lib/features/`: `live`, `movies`, `series`, `settings`, `shell`, `shared`. Player ao vivo em `lib/player/player_page.dart`; filmes/séries em `features/movies/vod_player_page.dart`. Atalhos de teclado ficam nos dois (controles do media_kit e `CallbackShortcuts`).
-- Regras que não são óbvias: canais saem em ordem natural por nome (`Db.channels`); recentes guardam só os 20 últimos por tipo (`recentsLimit`); a lista lateral do player abre pela borda direita após 300 ms.
+- Regras que não são óbvias: canais saem em ordem natural por nome, com as variantes de qualidade juntas (`channelCompare` em `Db.channels`); recentes guardam só os 20 últimos por tipo (`recentsLimit`); a lista lateral do player abre pela borda direita após 300 ms.
 - O player usa `media_kit` (nativo): não há teste de widget do `PlayerPage`. Mudança de player só se confirma abrindo o app.
 
 ## Fluxo de trabalho
